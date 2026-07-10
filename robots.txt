@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://thermaz.fr/sitemap.xml
