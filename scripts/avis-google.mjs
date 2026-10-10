@@ -3,7 +3,9 @@
 import { writeFile, mkdir } from "node:fs/promises";
 
 const key = process.env.GOOGLE_PLACES_API_KEY;
-const NAME = "thermaz"; // la fiche trouvée doit contenir ce mot
+const NAME = "thermaz";
+// Avis à ne jamais afficher sur le site (nom de l'auteur, en minuscules)
+const EXCLURE = ["theo danti"]; // la fiche trouvée doit contenir ce mot
 const SEARCH = process.env.GOOGLE_PLACE_QUERY || "Thermaz climatisation Salon-de-Provence";
 if (!key) {
   console.error("Il manque le secret GOOGLE_PLACES_API_KEY dans GitHub.");
@@ -61,7 +63,7 @@ const out = {
   count: p.userRatingCount ?? 0,
   url: p.googleMapsUri ?? null,
   updated: new Date().toISOString(),
-  reviews: (p.reviews ?? []).map(r => ({
+  reviews: (p.reviews ?? []).filter(r => !EXCLURE.includes((r.authorAttribution?.displayName ?? "").trim().toLowerCase())).map(r => ({
     name: r.authorAttribution?.displayName ?? "Client Google",
     stars: r.rating ?? 5,
     when: r.relativePublishTimeDescription ?? "",

@@ -101,7 +101,7 @@ const THERMAZ = {
         if (d.url) { THERMAZ.googleProfileUrl = d.url; $$("[data-profile-link]").forEach(a => a.href = d.url); }
         if (d.placeId) $$("[data-review-link]").forEach(a => a.href = "https://search.google.com/local/writereview?placeid=" + d.placeId);
         showRating(d.rating, d.count);
-        showReviews((d.reviews || []).filter(r => r.text));
+        showReviews((d.reviews || []).filter(r => r.text && !["theo danti"].includes((r.name || "").trim().toLowerCase())));
       })
       .catch(() => {});
   }
