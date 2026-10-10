@@ -14,14 +14,15 @@ const H = { "X-Goog-Api-Key": key, "Content-Type": "application/json" };
 // 1. Trouver la fiche (si l'identifiant n'est pas fourni)
 let placeId = process.env.GOOGLE_PLACE_ID;
 if (!placeId) {
-  const queries = [SEARCH, "Thermaz", "Thermaz Salon-de-Provence", "Thermaz climatisation", "Thermaz climatisation plomberie"];
+  const queries = [SEARCH, "Thermaz", "Thermaz Salon-de-Provence", "Thermaz climatisation plomberie", "+33 6 51 10 64 35", "06 51 10 64 35"];
   const seen = [];
   for (const q of queries) {
     const r = await fetch("https://places.googleapis.com/v1/places:searchText", {
       method: "POST",
-      headers: { ...H, "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.websiteUri" },
+      headers: { ...H, "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.websiteUri,places.nationalPhoneNumber" },
       body: JSON.stringify({
         textQuery: q, languageCode: "fr", regionCode: "FR",
+        includePureServiceAreaBusinesses: true, // Thermaz se déplace chez le client, sans adresse publique
         locationBias: { circle: { center: { latitude: 43.6403, longitude: 5.0973 }, radius: 50000 } }
       })
     });
@@ -29,7 +30,8 @@ if (!placeId) {
     const places = (await r.json()).places || [];
     places.forEach(p => seen.push(`${p.displayName?.text} | ${p.formattedAddress ?? "sans adresse"} | ${p.websiteUri ?? "-"}`));
     const found = places.find(p =>
-      (p.displayName?.text || "").toLowerCase().includes(NAME) || (p.websiteUri || "").toLowerCase().includes("thermaz.fr"));
+      (p.displayName?.text || "").toLowerCase().includes(NAME) || (p.websiteUri || "").toLowerCase().includes("thermaz.fr")
+      || (p.nationalPhoneNumber || "").replace(/\D/g, "").endsWith("651106435"));
     if (found) {
       placeId = found.id;
       console.log(`Fiche trouvée avec "${q}" : ${found.displayName.text} (${placeId})`);
