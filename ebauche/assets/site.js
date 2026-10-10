@@ -73,24 +73,26 @@ const THERMAZ = {
     $$("[data-rating]").forEach(el => {
       el.textContent = rating ? rating.toLocaleString("fr-FR", { minimumFractionDigits: 1 }) + "/5 · " + count + " avis Google" : "Avis Google";
     });
+    $$("[data-score]").forEach(el => { el.textContent = rating ? rating.toLocaleString("fr-FR", { minimumFractionDigits: 1 }) : "5,0"; });
   }
+  const AV = ["#1F6FBF", "#E03A3A", "#0F2236", "#2E8B6A", "#7A4FBF"];
   function showReviews(list) {
     const box = $("#reviews");
     if (!box || !list.length) return;
     box.className = "reviews";
     box.innerHTML = "";
-    list.forEach(r => {
+    list.forEach((r, i) => {
       const el = document.createElement("article");
       el.className = "rev";
-      el.innerHTML = '<div class="stars"></div><p></p><div class="who"></div>';
+      el.innerHTML = '<div class="rev-top"><span class="av"></span><div><b></b><small></small></div><span class="g">G</span></div><div class="stars"></div><p></p>';
+      $(".av", el).textContent = (r.name || "?").trim().charAt(0).toUpperCase();
+      $(".av", el).style.background = AV[i % AV.length];
+      $(".rev-top b", el).textContent = r.name;
+      $(".rev-top small", el).textContent = r.when || "";
       const st = $(".stars", el);
       st.textContent = "★".repeat(r.stars) + "☆".repeat(5 - r.stars);
       st.setAttribute("aria-label", r.stars + " étoiles sur 5");
-      const txt = r.text.length > 320 ? r.text.slice(0, 300).replace(/\s+\S*$/, "") + "…" : r.text;
-      $("p", el).textContent = "« " + txt + " »";
-      $(".who", el).innerHTML = "<span></span>";
-      $(".who", el).prepend(document.createTextNode(r.name));
-      $(".who span", el).textContent = r.when ? " · " + r.when : "";
+      $("p", el).textContent = r.text.length > 320 ? r.text.slice(0, 300).replace(/\s+\S*$/, "") + "…" : r.text;
       box.appendChild(el);
     });
   }
