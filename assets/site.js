@@ -293,5 +293,149 @@ const THERMAZ = {
     show(0);
   }
 
+  /* ---- Sélecteur de climatiseurs (onglets + carrousel) ---- */
+  $$("[data-pds]").forEach(box => {
+    const tabs = $$('.pd-tabs [role="tab"]', box);
+    function setupPane(pane) {
+      if (pane.dataset.ready) return; pane.dataset.ready = 1;
+      const track = $(".pd-track", pane), cards = $$(".pd", track), dots = $(".pd-dots", pane);
+      cards.forEach((c, i) => { const d = document.createElement("button"); d.type = "button"; d.setAttribute("aria-label", "Modèle " + (i + 1)); d.addEventListener("click", () => track.scrollTo({ left: c.offsetLeft - track.offsetLeft, behavior: "smooth" })); dots.appendChild(d); });
+      const upd = () => {
+        const i = Math.round(track.scrollLeft / Math.max(1, cards[0].offsetWidth + 18));
+        $$("button", dots).forEach((d, k) => d.classList.toggle("on", k === Math.min(i, cards.length - 1)));
+        $(".pd-prev", pane).disabled = track.scrollLeft < 8;
+        $(".pd-next", pane).disabled = track.scrollLeft + track.clientWidth > track.scrollWidth - 8;
+        pane.classList.toggle("fits", track.scrollWidth <= track.clientWidth + 4);
+      };
+      track.addEventListener("scroll", () => requestAnimationFrame(upd), { passive: true });
+      window.addEventListener("resize", upd);
+      const step = d => track.scrollBy({ left: d * (cards[0].offsetWidth + 18), behavior: "smooth" });
+      $(".pd-prev", pane).addEventListener("click", () => step(-1));
+      $(".pd-next", pane).addEventListener("click", () => step(1));
+      upd();
+    }
+    tabs.forEach(t => t.addEventListener("click", () => {
+      tabs.forEach(x => { const on = x === t; x.setAttribute("aria-selected", on); $("#" + x.getAttribute("aria-controls")).hidden = !on; });
+      setupPane($("#" + t.getAttribute("aria-controls")));
+      t.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    }));
+    setupPane($(".pd-pane:not([hidden])", box));
+  });
+
+  /* ---- Devis rapide de la page d'accueil ---- */
+  const qw = $("[data-qw]");
+  if (qw) {
+    const C = JSON.parse(qw.dataset.qw);
+    const el = s => $(s, qw);
+    let flow = "installation", i = 0, A = {};
+    const steps = () => C.flows[flow].steps;
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const lbl = (step, v) => { const o = (step.options || []).find(x => x.v === v); return o ? o.label : v; };
+
+    function estimate() {
+      const P = C.prices;
+      if (flow === "installation") {
+        const g = A.gamme === "pre" ? "pre" : "ess", n = +(A.pieces || 0), m2 = +(A.surface || 25);
+        if (A.type === "murale" && n === 1) { const k = m2 <= 25 ? "2.5" : m2 <= 35 ? "3.5" : m2 <= 50 ? "5" : null; return k ? "dès " + euro(P[g][k]) : "Sur devis"; }
+        if ((A.type === "multi" || A.type === "murale") && n === 2) return "dès " + euro(P[g].bi);
+        return A.type ? "Sur devis" : "";
+      }
+      if (flow === "entretien") {
+        if (A.formule === "contrat") return euro(C.ent.contrat) + "/an";
+        if (A.formule === "ponctuel") { const n = +(A.unites || 1); return n > 1 ? "dès " + euro(C.ent.nettoyage) + " / unité" : euro(C.ent.nettoyage); }
+        return "";
+      }
+      return A.panne ? "Diagnostic sur devis" : "";
+    }
+    function valid(step) {
+      if (step.kind === "rooms") return !!A.pieces;
+      if (step.kind === "place") return !!A.bien && !!(A.commune || "").trim();
+      if (step.kind === "contact") return !!(A.nom || "").trim() && (A.telephone || "").replace(/\D/g, "").length >= 9;
+      return !!A[step.key];
+    }
+    function recap() {
+      const st = steps(), done = st.filter(valid).length;
+      el(".qw-count").textContent = done + "/" + st.length;
+      const e = estimate(); el(".qw-est").textContent = e; el(".qw-est").hidden = !e;
+      const rows = [];
+      st.forEach(s => {
+        if (s.kind === "rooms") { if (A.pieces) rows.push([s.name, A.pieces + (A.pieces === "4" ? "+" : "") + " pièce" + (A.pieces > 1 ? "s" : "") + " · " + (A.surface || 25) + " m²"]); }
+        else if (s.kind === "place") { if (A.bien || A.commune) rows.push([s.name, [A.bien && A.bien[0].toUpperCase() + A.bien.slice(1), A.commune].filter(Boolean).join(" · ")]); }
+        else if (s.kind === "contact") { if (A.nom) rows.push([s.name, A.nom]); }
+        else if (A[s.key]) rows.push([s.name, lbl(s, A[s.key])]);
+      });
+      el(".qw-list").innerHTML = rows.length ? rows.map(r => "<div><dt>" + esc(r[0]) + "</dt><dd>" + esc(r[1]) + "</dd></div>").join("") : "<div><dd>Répondez aux questions, votre projet se construit ici.</dd></div>";
+    }
+    function optCards(step) {
+      const items = step.options.map(o => '<button type="button" class="qo' + (A[step.key] === o.v ? " on" : "") + (o.art ? " has-art" : "") + '" data-v="' + esc(o.v) + '">' +
+        (o.art ? '<span class="qo-art">' + o.art + "</span>" : '<span class="qo-ic">' + o.icon + "</span>") +
+        "<b>" + esc(o.label) + "</b>" + (o.desc ? "<span>" + esc(o.desc) + "</span>" : "") + "</button>").join("");
+      return '<div class="qo-track' + (step.options.some(o => o.art) ? " art" : "") + '">' + items + "</div>";
+    }
+    function render() {
+      const st = steps(), s = st[i];
+      el(".qw-step").textContent = "Étape " + (i + 1) + " / " + st.length;
+      el(".qw-name").textContent = s.name;
+      el(".qw-bar i").style.width = ((i + 1) / st.length * 100) + "%";
+      el(".qw-title").textContent = s.title;
+      el(".qw-status").textContent = ""; el(".qw-status").className = "status qw-status";
+      let h = "";
+      if (s.options) h = optCards(s);
+      else if (s.kind === "chips") h = '<div class="qchips">' + s.chips.map(c => '<button type="button" class="qchip' + (A[s.key] === c ? " on" : "") + '" data-v="' + esc(c) + '">' + esc(c) + "</button>").join("") + "</div>";
+      else if (s.kind === "rooms") h = '<div class="qchips big">' + ["1", "2", "3", "4"].map(n => '<button type="button" class="qchip' + (A.pieces === n ? " on" : "") + '" data-room="' + n + '">' + n + (n === "4" ? "+" : "") + " pièce" + (n > 1 ? "s" : "") + "</button>").join("") + '</div><div class="field qw-range"><label for="qw-m2">Surface à climatiser (au total)</label><div class="range"><input type="range" id="qw-m2" min="10" max="150" value="' + (A.surface || 25) + '"><output>' + (A.surface || 25) + " m²</output></div></div>";
+      else if (s.kind === "place") h = '<div class="qo-track">' + [["maison", "Maison"], ["appartement", "Appartement"], ["pro", "Local pro"]].map(([v, l]) => '<button type="button" class="qo' + (A.bien === v ? " on" : "") + '" data-bien="' + v + '"><span class="qo-ic">' + C.place_icons[v] + "</span><b>" + l + "</b></button>").join("") + '</div><div class="f2 qw-fields"><div class="field"><label for="qw-commune">Commune</label><input id="qw-commune" data-k="commune" autocomplete="address-level2" placeholder="Salon-de-Provence" value="' + esc(A.commune || "") + '"></div><div class="field"><label for="qw-delai">Quand ?</label><select id="qw-delai" data-k="delai">' + ["Dès que possible", "Dans le mois", "Dans les 3 mois", "Je me renseigne"].map(d => "<option" + (A.delai === d ? " selected" : "") + ">" + d + "</option>").join("") + "</select></div></div>";
+      else if (s.kind === "contact") h = '<div class="qw-fields"><div class="f2"><div class="field"><label for="qw-nom">Prénom et nom</label><input id="qw-nom" data-k="nom" autocomplete="name" value="' + esc(A.nom || "") + '"></div><div class="field"><label for="qw-tel">Téléphone</label><input id="qw-tel" data-k="telephone" type="tel" autocomplete="tel" value="' + esc(A.telephone || "") + '"></div></div><div class="field"><label for="qw-mail">E-mail (facultatif)</label><input id="qw-mail" data-k="email" type="email" autocomplete="email" value="' + esc(A.email || "") + '"></div><div class="field"><label for="qw-msg">Précisions (facultatif)</label><textarea id="qw-msg" data-k="message" rows="3" placeholder="Étage, emplacement du groupe extérieur, marque souhaitée…">' + esc(A.message || "") + "</textarea></div></div>";
+      el(".qw-content").innerHTML = h;
+      el(".qw-prev").hidden = i === 0;
+      const last = i === st.length - 1;
+      el(".qw-next").textContent = last ? "Envoyer ma demande" : "Suivant";
+      el(".qw-next").disabled = !valid(s);
+      recap();
+    }
+    function refresh() { el(".qw-next").disabled = !valid(steps()[i]); recap(); }
+    el(".qw-content").addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b) return;
+      const s = steps()[i];
+      if (b.dataset.room) { A.pieces = b.dataset.room; $$(".qchip", qw).forEach(x => x.classList.toggle("on", x === b)); return refresh(); }
+      if (b.dataset.bien) { A.bien = b.dataset.bien; $$(".qo", qw).forEach(x => x.classList.toggle("on", x === b)); return refresh(); }
+      if (b.dataset.v !== undefined) {
+        A[s.key] = b.dataset.v;
+        $$(".qo,.qchip", qw).forEach(x => x.classList.toggle("on", x === b));
+        refresh();
+        setTimeout(() => { if (i < steps().length - 1 && valid(s)) { i++; render(); } }, 260);
+      }
+    });
+    el(".qw-content").addEventListener("input", e => {
+      const t = e.target;
+      if (t.id === "qw-m2") { A.surface = t.value; t.nextElementSibling.textContent = t.value + " m²"; }
+      else if (t.dataset.k) A[t.dataset.k] = t.value;
+      refresh();
+    });
+    el(".qw-content").addEventListener("change", e => { if (e.target.dataset.k) { A[e.target.dataset.k] = e.target.value; refresh(); } });
+    el(".qw-prev").addEventListener("click", () => { if (i > 0) { i--; render(); } });
+    el(".qw-next").addEventListener("click", async () => {
+      const st = steps();
+      if (!valid(st[i])) return;
+      if (i < st.length - 1) { i++; render(); return; }
+      const d = { prestation: C.flows[flow].label };
+      st.forEach(s => { if (s.options) d[s.name.toLowerCase()] = lbl(s, A[s.key]); else if (s.kind === "chips") d.marque = A.marque; });
+      if (A.pieces) d.pieces = A.pieces + " pièce(s), " + (A.surface || 25) + " m²";
+      Object.assign(d, { bien: A.bien, commune: A.commune, delai: A.delai || "Dès que possible", nom: A.nom, telephone: A.telephone, email: A.email || "", message: A.message || "", estimation: estimate() });
+      el(".qw-next").disabled = true;
+      const ok = await sendLead(d, el(".qw-status"));
+      if (ok && THERMAZ.web3formsKey) {
+        el(".qw-content").innerHTML = '<div class="qw-done"><b>Merci ' + esc((A.nom || "").split(" ")[0]) + ", votre demande est envoyée.</b><p>Je vous rappelle dans la journée au " + esc(A.telephone) + ".</p></div>";
+        el(".qw-nav").hidden = true;
+      } else el(".qw-next").disabled = false;
+    });
+    el(".qw-head").addEventListener("click", e => { const open = el(".qw-list").hidden; el(".qw-list").hidden = !open; e.currentTarget.setAttribute("aria-expanded", open); });
+    $$(".qw-tabs button", qw).forEach(b => b.addEventListener("click", () => {
+      flow = b.dataset.flow; i = 0; A = {};
+      $$(".qw-tabs button", qw).forEach(x => x.setAttribute("aria-selected", x === b));
+      el(".qw-nav").hidden = false; render();
+    }));
+    render();
+  }
+
   $$("[data-year]").forEach(el => el.textContent = new Date().getFullYear());
 })();
