@@ -25,6 +25,7 @@ jobs:
         run: node scripts/avis-google.mjs
         env:
           GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+          GOOGLE_PLACE_ID: ${{ secrets.GOOGLE_PLACE_ID }}
       - name: Publier si quelque chose a changé
         run: |
           git config user.name "thermaz-bot"
