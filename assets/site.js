@@ -6,7 +6,7 @@ const THERMAZ = {
   email: "thermaz.fr@gmail.com",
   // Clé gratuite sur https://web3forms.com : les demandes arrivent par mail.
   // Vide = le formulaire ouvre l'appli mail du client (moins fiable).
-  web3formsKey: "",
+  web3formsKey: "0fdaa1f6-3533-4529-85d1-671b114a7ce0",
   // Ton identifiant de fiche Google (commence par ChIJ...). Sert au bouton "Laisser un avis".
   googlePlaceId: "",
   // Lien vers ta fiche Google (copie l'adresse de ta fiche depuis Google Maps).
