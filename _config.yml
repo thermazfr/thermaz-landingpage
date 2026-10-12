@@ -1,0 +1,5 @@
+# GitHub Pages : fichiers de travail à ne pas publier sur thermaz.fr
+exclude:
+  - PRODUCT.md
+  - DESIGN.md
+  - scripts
