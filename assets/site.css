@@ -236,6 +236,9 @@ tbody th{font-weight:700}
 tbody th small{display:block;font-weight:400;color:var(--muted);font-size:13.5px}
 td{font-weight:700;font-size:18px;white-space:nowrap}
 tbody tr:last-child>*{border-bottom:0}
+.tbl-text td{white-space:normal;font-weight:400;font-size:16px;line-height:1.5}
+.tbl-text{min-width:0}
+@media (max-width:520px){.tbl-text th,.tbl-text td{padding:12px 12px}.tbl-text tbody th{white-space:normal;width:34%}}
 
 /* ---------- Calculator (installation) ---------- */
 .calc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:28px;display:grid;gap:28px;box-shadow:var(--shadow)}

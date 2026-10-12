@@ -3,7 +3,7 @@
 > Thermaz est une entreprise artisanale de climatisation basée à Salon-de-Provence (Bouches-du-Rhône, 13). Elle installe, entretient et dépanne des climatisations réversibles (pompes à chaleur air-air) de toutes marques, et réalise aussi des travaux de plomberie.
 
 ## Informations clés
-- Zone : Salon-de-Provence, Pélissanne, Lançon-Provence, Grans, Eyguières, Miramas, Istres, Saint-Chamas et alentours ; Aix-en-Provence sur rendez-vous
+- Zone : Salon-de-Provence, Pélissanne, Lançon-Provence, Grans, La Barben, Cornillon-Confoux, Eyguières, Sénas, Miramas, Istres, Saint-Chamas et alentours ; Aix-en-Provence sur rendez-vous
 - Téléphone : 06 51 10 64 35
 - E-mail : thermaz.fr@gmail.com
 - Site : https://thermaz.fr/
@@ -29,3 +29,20 @@
 - [Dépannage](https://thermaz.fr/depannage-climatisation.html)
 - [Questions fréquentes](https://thermaz.fr/questions-climatisation.html)
 - [Devis en ligne](https://thermaz.fr/devis.html)
+- [Quelle marque de clim choisir](https://thermaz.fr/blog-quelle-marque-de-clim-choisir.html)
+- [Clim réversible ou radiateur électrique](https://thermaz.fr/blog-clim-reversible-ou-radiateur-electrique.html)
+- [Clim au R32 et réglementation F-gaz](https://thermaz.fr/blog-clim-r32-interdite-reglementation-f-gaz.html)
+
+## Communes
+- [Climatisation Salon-de-Provence](https://thermaz.fr/climatisation-salon-de-provence.html)
+- [Climatisation Pélissanne](https://thermaz.fr/climatisation-pelissanne.html)
+- [Climatisation Grans](https://thermaz.fr/climatisation-grans.html)
+- [Climatisation La Barben](https://thermaz.fr/climatisation-la-barben.html)
+- [Climatisation Lançon-Provence](https://thermaz.fr/climatisation-lancon-provence.html)
+- [Climatisation Cornillon-Confoux](https://thermaz.fr/climatisation-cornillon-confoux.html)
+- [Climatisation Eyguières](https://thermaz.fr/climatisation-eyguieres.html)
+- [Climatisation Sénas](https://thermaz.fr/climatisation-senas.html)
+- [Climatisation Miramas](https://thermaz.fr/climatisation-miramas.html)
+- [Climatisation Saint-Chamas](https://thermaz.fr/climatisation-saint-chamas.html)
+- [Climatisation Istres](https://thermaz.fr/climatisation-istres.html)
+- [Climatisation Aix-en-Provence](https://thermaz.fr/climatisation-aix-en-provence.html)
