@@ -238,3 +238,11 @@ html.lenis,html.lenis body{height:auto}
   .h-hero-media img.is-on{animation:none}
   .h-gallery figure:hover img{transform:none}
 }
+
+/* Vidéo du nettoyage (rangée Entretien) */
+.h-row-video{aspect-ratio:4/5;max-width:440px;width:100%;justify-self:center;background:#0B1622}
+.h-row-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%}
+.h-row-video figcaption{position:absolute;left:12px;right:12px;bottom:12px;background:rgba(5,11,17,.72);color:#fff;font-size:13.5px;font-weight:600;padding:8px 12px;border-radius:10px;pointer-events:none}
+/* Photo du commerce dans l'encart Professionnels */
+.h-pro-media{margin:0;width:100%;aspect-ratio:3/2;border-radius:var(--r);overflow:hidden;position:relative;background:var(--surface)}
+.h-pro-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}

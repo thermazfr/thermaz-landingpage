@@ -38,6 +38,16 @@
     setInterval(() => { if (heroVisible && !document.hidden) go(cur + 1); }, 6500);
   }
 
+  /* ---- Vidéo du nettoyage : se lance seule quand elle est visible ---- */
+  const vid = $(".h-row-video video");
+  if (vid && !reduce && "IntersectionObserver" in window) {
+    vid.removeAttribute("controls");
+    new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) { vid.preload = "auto"; vid.play().catch(() => vid.setAttribute("controls", "")); }
+      else vid.pause();
+    }), { threshold: 0.35 }).observe(vid);
+  }
+
   const gsap = window.gsap, ScrollTrigger = window.ScrollTrigger;
   if (!gsap || !ScrollTrigger || reduce) return;
   gsap.registerPlugin(ScrollTrigger);
