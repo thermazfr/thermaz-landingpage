@@ -38,6 +38,37 @@ const THERMAZ = {
     set(k, v) { try { sessionStorage.setItem(k, v); } catch {} }
   };
 
+  /* ---- Mesure (Google Tag Manager) : événements pour Google Ads et Analytics ---- */
+  window.dataLayer = window.dataLayer || [];
+  function track(event, params) { window.dataLayer.push(Object.assign({ event: event }, params || {})); }
+  document.addEventListener("click", e => {
+    const a = e.target.closest('a[href^="tel:"]');
+    if (a) { const zone = a.closest("header,footer,.callbar,.h-hero,.h-final"); track("phone_click", { emplacement: zone ? zone.className.split(" ")[0] : "page" }); }
+    const m = e.target.closest('a[href^="mailto:"]');
+    if (m) track("email_click");
+  });
+
+  /* ---- Bandeau cookies : rien n'est mesuré sans accord ---- */
+  (function consent() {
+    let choice = null;
+    try { choice = localStorage.getItem("thz_consent"); } catch {}
+    const set = v => {
+      try { localStorage.setItem("thz_consent", v); } catch {}
+      const g = v === "granted" ? "granted" : "denied";
+      if (typeof window.gtag === "function") window.gtag("consent", "update", { ad_storage: g, ad_user_data: g, ad_personalization: g, analytics_storage: g });
+      track("consent_" + v);
+    };
+    window.thermazCookies = () => { const b = document.querySelector(".consent"); if (b) b.hidden = false; else show(); };
+    function show() {
+      const b = document.createElement("div");
+      b.className = "consent"; b.setAttribute("role", "dialog"); b.setAttribute("aria-label", "Cookies de mesure");
+      b.innerHTML = '<p>J\'utilise des cookies Google pour savoir quelles annonces et quelles pages vous amènent ici, et améliorer le site. Rien n\'est activé sans votre accord. <a href="mentions-legales.html#cookies">En savoir plus</a></p><div class="consent-btns"><button type="button" class="btn btn-line btn-sm" data-c="denied">Refuser</button><button type="button" class="btn btn-ink btn-sm" data-c="granted">Accepter</button></div>';
+      b.addEventListener("click", e => { const btn = e.target.closest("[data-c]"); if (!btn) return; set(btn.dataset.c); b.hidden = true; });
+      document.body.appendChild(b);
+    }
+    if (choice !== "granted" && choice !== "denied") show();
+  })();
+
   /* ---- Menu mobile + menus déroulants ---- */
   const hdr = $(".hdr");
   $(".burger")?.addEventListener("click", e => {
@@ -145,6 +176,7 @@ const THERMAZ = {
       });
       if (!r.ok) throw new Error();
       statusEl.className = "status ok"; statusEl.textContent = "Demande envoyée. Je vous rappelle dans la journée.";
+      track("generate_lead", { prestation: data.prestation || "", commune: data.commune || "", estimation: data.estimation || "" });
       return true;
     } catch {
       statusEl.className = "status err";
