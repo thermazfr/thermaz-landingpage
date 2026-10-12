@@ -177,6 +177,9 @@ const THERMAZ = {
       if (!r.ok) throw new Error();
       statusEl.className = "status ok"; statusEl.textContent = "Demande envoyée. Je vous rappelle dans la journée.";
       track("generate_lead", { prestation: data.prestation || "", commune: data.commune || "", estimation: data.estimation || "" });
+      // Page de remerciement : sert aussi de page de conversion pour Google Ads
+      store.set("thz_lead", JSON.stringify({ nom: (data.nom || "").split(" ")[0], telephone: data.telephone || "", prestation: data.prestation || "" }));
+      setTimeout(() => { location.href = "merci.html"; }, 1200);
       return true;
     } catch {
       statusEl.className = "status err";
@@ -467,6 +470,16 @@ const THERMAZ = {
       el(".qw-nav").hidden = false; render();
     }));
     render();
+  }
+
+  /* ---- Page de remerciement personnalisée ---- */
+  const thanks = $("[data-thanks]");
+  if (thanks) {
+    try {
+      const L = JSON.parse(store.get("thz_lead") || "{}");
+      if (L.nom) $("[data-thanks-name]").textContent = "Merci " + L.nom + ", ";
+      if (L.telephone) $("[data-thanks-tel]").textContent = " au " + L.telephone;
+    } catch {}
   }
 
   $$("[data-year]").forEach(el => el.textContent = new Date().getFullYear());
