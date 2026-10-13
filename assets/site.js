@@ -479,6 +479,12 @@ const THERMAZ = {
       const L = JSON.parse(store.get("thz_lead") || "{}");
       if (L.nom) $("[data-thanks-name]").textContent = "Merci " + L.nom + ", ";
       if (L.telephone) $("[data-thanks-tel]").textContent = " au " + L.telephone;
+      // Conversion Google Ads « request_quote » : une seule fois par demande réellement envoyée
+      if (L.telephone && typeof window.gtag === "function") {
+        window.gtag("event", "request_quote", { send_to: "AW-18453499766" });
+        track("request_quote_sent");
+        store.set("thz_lead", "{}");
+      }
     } catch {}
   }
 
