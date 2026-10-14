@@ -59,6 +59,7 @@ const THERMAZ = {
       track("consent_" + v);
     };
     window.thermazCookies = () => { const b = document.querySelector(".consent"); if (b) b.hidden = false; else show(); };
+    document.addEventListener("click", e => { if (e.target.closest("[data-cookies-reset]")) window.thermazCookies(); });
     function show() {
       const b = document.createElement("div");
       b.className = "consent"; b.setAttribute("role", "dialog"); b.setAttribute("aria-label", "Cookies de mesure");
