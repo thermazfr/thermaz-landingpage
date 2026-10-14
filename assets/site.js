@@ -100,9 +100,13 @@ const THERMAZ = {
   $$("[data-profile-link]").forEach(a => a.href = THERMAZ.googleProfileUrl);
 
   /* ---- Avis Google (mis à jour automatiquement) ---- */
+  // Le nombre d'avis ne s'affiche qu'à partir de 30 avis ; avant, la note seule.
+  const MIN_AVIS_AFFICHES = 30;
   function showRating(rating, count) {
     $$("[data-rating]").forEach(el => {
-      el.textContent = rating ? rating.toLocaleString("fr-FR", { minimumFractionDigits: 1 }) + "/5 · " + count + " avis Google" : "Avis Google";
+      if (!rating) { el.textContent = "Avis Google"; return; }
+      const note = rating.toLocaleString("fr-FR", { minimumFractionDigits: 1 }) + "/5";
+      el.textContent = count >= MIN_AVIS_AFFICHES ? note + " · " + count + " avis Google" : note + " sur Google";
     });
   }
   function showReviews(list) {
