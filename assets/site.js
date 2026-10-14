@@ -38,7 +38,7 @@ const THERMAZ = {
     set(k, v) { try { sessionStorage.setItem(k, v); } catch {} }
   };
 
-  /* ---- Mesure (Google Tag Manager) : événements pour Google Ads et Analytics ---- */
+  /* ---- Mesure : événements de navigation (appels, e-mails, devis) dans le dataLayer ---- */
   window.dataLayer = window.dataLayer || [];
   function track(event, params) { window.dataLayer.push(Object.assign({ event: event }, params || {})); }
   document.addEventListener("click", e => {
