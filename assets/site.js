@@ -494,4 +494,9 @@ const THERMAZ = {
   }
 
   $$("[data-year]").forEach(el => el.textContent = new Date().getFullYear());
+
+  // Offres limitées : masquées automatiquement le lendemain de leur date de fin
+  $$("[data-offer-until]").forEach(el => {
+    if (new Date() > new Date(el.dataset.offerUntil + "T23:59:59")) el.hidden = true;
+  });
 })();

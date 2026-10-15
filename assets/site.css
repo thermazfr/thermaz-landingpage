@@ -509,3 +509,10 @@ legend{font-weight:700;font-size:15.5px;margin-bottom:10px;padding:0}
 .consent a{font-weight:600}
 .consent-btns{display:flex;gap:10px;justify-content:flex-end}
 @media (min-width:900px){.consent{left:24px;right:auto;bottom:24px}}
+
+/* ---------- Offre limitée dans le temps (masquée après sa date par site.js) ---------- */
+.offer{display:inline-block;margin:14px 0 4px;padding:10px 16px;border-radius:12px;background:rgba(211,56,31,.14);border:1px solid rgba(211,56,31,.45);font-size:15.5px;line-height:1.45;max-width:62ch}
+.offer b,.h-hp-offer b{display:inline-block;margin-right:8px;padding:2px 9px;border-radius:999px;background:var(--warm);color:#fff;font-size:12.5px;letter-spacing:.02em;text-transform:uppercase;vertical-align:1px}
+.t-offer{margin:2px 0 6px;font-size:14.5px;font-weight:650;color:var(--warm-deep)}
+@media (prefers-color-scheme:dark){.t-offer{color:#FF8A73}}
+[data-offer-until][hidden]{display:none!important}
