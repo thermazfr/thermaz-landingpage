@@ -186,7 +186,7 @@ const THERMAZ = {
       statusEl.className = "status ok"; statusEl.textContent = "Demande envoyée. Je vous rappelle dans la journée.";
       track("generate_lead", { prestation: data.prestation || "", commune: data.commune || "", estimation: data.estimation || "" });
       // Page de remerciement : sert aussi de page de conversion pour Google Ads
-      store.set("thz_lead", JSON.stringify({ nom: (data.nom || "").split(" ")[0], telephone: data.telephone || "", prestation: data.prestation || "" }));
+      store.set("thz_lead", JSON.stringify({ nom: (data.nom || "").split(" ")[0], telephone: data.telephone || "", prestation: data.prestation || "", estimation: data.estimation || "" }));
       setTimeout(() => { location.href = "merci.html"; }, 1200);
       return true;
     } catch {
@@ -292,7 +292,8 @@ const THERMAZ = {
       $("#r-bien").textContent = [labelOf("bien"), $("#w-commune").value].filter(Boolean).join(" · ") || "–";
       $("#w-m2-out").textContent = $("#w-m2").value + " m²";
       const e = estimate();
-      $("#r-est").innerHTML = e ? "dès " + euro(e) : "Sur devis";
+      // Le prix exact n'est donné qu'après l'envoi des coordonnées (page merci)
+      $("#r-est").innerHTML = e ? "Affichée à l'envoi" : "Sur devis";
     }
     function needsType() { return val("prestation") === "installation"; }
     function show(n) {
@@ -328,7 +329,7 @@ const THERMAZ = {
         commune: $("#w-commune").value, delai: $("#w-delai").value,
         nom: $("#w-nom").value, telephone: $("#w-tel").value, email: $("#w-mail").value,
         source: $("#w-source").value, message: $("#w-msg").value,
-        estimation: $("#r-est").textContent
+        estimation: estimate() ? "dès " + euro(estimate()) : "Sur devis"
       };
       if (!d.nom || !d.telephone) { st.className = "status err"; st.textContent = "Indiquez votre nom et votre téléphone pour que je puisse vous rappeler."; return; }
       await sendLead(d, st);
@@ -399,7 +400,8 @@ const THERMAZ = {
     function recap() {
       const st = steps(), done = st.filter(valid).length;
       el(".qw-count").textContent = done + "/" + st.length;
-      const e = estimate(); el(".qw-est").textContent = e; el(".qw-est").hidden = !e;
+      // Le prix exact n'est donné qu'après l'envoi des coordonnées (page merci)
+      el(".qw-est").hidden = true;
       const rows = [];
       st.forEach(s => {
         if (s.kind === "rooms") { if (A.pieces) rows.push([s.name, A.pieces + (A.pieces === "4" ? "+" : "") + " pièce" + (A.pieces > 1 ? "s" : "") + " · " + (A.surface || 25) + " m²"]); }
@@ -487,6 +489,15 @@ const THERMAZ = {
       const L = JSON.parse(store.get("thz_lead") || "{}");
       if (L.nom) $("[data-thanks-name]").textContent = "Merci " + L.nom + ", ";
       if (L.telephone) $("[data-thanks-tel]").textContent = " au " + L.telephone;
+      // Prix de la demande, révélé une fois les coordonnées envoyées
+      if (L.estimation && /€/.test(L.estimation)) {
+        const p = document.createElement("p");
+        p.className = "lead";
+        p.innerHTML = "Votre estimation : <b></b>. Je vous confirme le prix exact en vous rappelant.";
+        $("b", p).textContent = L.estimation;
+        const lead = $(".lead", thanks);
+        lead ? lead.after(p) : thanks.firstElementChild.appendChild(p);
+      }
       // Conversion Google Ads « request_quote » : une seule fois par demande réellement envoyée
       if (L.telephone && typeof window.gtag === "function") {
         window.gtag("event", "request_quote", { send_to: "AW-18453499766" });
