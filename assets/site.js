@@ -493,7 +493,7 @@ const THERMAZ = {
       if (L.estimation && /€/.test(L.estimation)) {
         const p = document.createElement("p");
         p.className = "lead";
-        p.innerHTML = "Votre estimation : <b></b>. Je vous confirme le prix exact en vous rappelant.";
+        p.innerHTML = "Votre estimation : <b></b>, pour une pose standard. Le prix définitif dépend notamment de la distance entre les deux unités (longueur des liaisons) : je vous le confirme après une visite ou quelques photos.";
         $("b", p).textContent = L.estimation;
         const lead = $(".lead", thanks);
         lead ? lead.after(p) : thanks.firstElementChild.appendChild(p);
