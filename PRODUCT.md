@@ -41,7 +41,7 @@ Parcours type : recherche Google locale (« climatisation Salon-de-Provence »),
 ## Evidence on Hand
 
 - Prix TTC pose standard comprise : murale 2,5 kW dès 1 290 € (essentielle) / 1 590 € (premium) ; 3,5 kW dès 1 450 € / 1 790 € ; 5 kW dès 2 050 € / 2 490 € ; bisplit dès 2 390 € / 3 090 € ; nettoyage 159 € par unité ; contrat d'entretien 149 €/an.
-- Engagements : devis gratuit sous 24h, garantie pose 2 ans (prolongée avec le contrat), sans sous-traitance, lundi-samedi 8h-19h.
+- Engagements : devis gratuit sous 24h, garantie pose 2 ans (prolongée avec le contrat), sans sous-traitance, tous les jours 8h-20h.
 - Photos de chantiers réels dans photos/ (Mitsubishi Electric, Daikin, Bosch, Panasonic, Thermor, Altech) et une vidéo d'entretien (videos/).
 - Marques installées : Mitsubishi Electric, Daikin, Atlantic, Thermor, Bosch, Panasonic, Altech, Toshiba.
 - Contact : 06 51 10 64 35, thermaz.fr@gmail.com.
