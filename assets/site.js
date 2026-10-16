@@ -43,7 +43,10 @@ const THERMAZ = {
   function track(event, params) { window.dataLayer.push(Object.assign({ event: event }, params || {})); }
   document.addEventListener("click", e => {
     const a = e.target.closest('a[href^="tel:"]');
-    if (a) { const zone = a.closest("header,footer,.callbar,.h-hero,.h-final"); track("phone_click", { emplacement: zone ? zone.className.split(" ")[0] : "page" }); }
+    if (a) { const zone = a.closest("header,footer,.callbar,.h-hero,.h-final"); track("phone_click", { emplacement: zone ? zone.className.split(" ")[0] : "page" });
+      // Conversion Google Ads secondaire « Clic numero site » (mesure seule, sans effet sur les enchères)
+      if (typeof window.gtag === "function") window.gtag("event", "conversion", { send_to: "AW-18453499766/tm33CPuL8p4dEPaeqN9E" });
+    }
     const m = e.target.closest('a[href^="mailto:"]');
     if (m) track("email_click");
   });
