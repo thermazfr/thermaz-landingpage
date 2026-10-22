@@ -4,9 +4,10 @@ const THERMAZ = {
   phone: "06 51 10 64 35",
   phoneLink: "+33651106435",
   email: "thermaz.fr@gmail.com",
-  // Clé gratuite sur https://web3forms.com : les demandes arrivent par mail.
+  // Adresse du CRM (script Google lié au tableau « CRM Thermaz ») : chaque demande y est
+  // enregistrée et envoyée par mail, sans filtre anti-spam.
   // Vide = le formulaire ouvre l'appli mail du client (moins fiable).
-  web3formsKey: "0fdaa1f6-3533-4529-85d1-671b114a7ce0",
+  leadEndpoint: "https://script.google.com/macros/s/AKfycbyhc5wNrMwAWh3cvH-ejnONlpkP_lPJBzYbbrn8TDiZkBD-S_YtRor8i6HEEthsb3fdpA/exec",
   // Ton identifiant de fiche Google (commence par ChIJ...). Sert au bouton "Laisser un avis".
   googlePlaceId: "",
   // Lien vers ta fiche Google (copie l'adresse de ta fiche depuis Google Maps).
@@ -169,7 +170,7 @@ const THERMAZ = {
     const data = Object.assign({}, fields, attribution());
     const subject = "Demande Thermaz : " + (data.prestation || "devis") + " à " + (data.commune || "?");
     const body = Object.entries(data).filter(([, v]) => v).map(([k, v]) => k + " : " + v).join("\n");
-    if (!THERMAZ.web3formsKey) {
+    if (!THERMAZ.leadEndpoint) {
       location.href = "mailto:" + THERMAZ.email + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
       statusEl.className = "status";
       statusEl.textContent = "Votre application mail s'ouvre avec la demande prête. Si rien ne s'ouvre, appelez le " + THERMAZ.phone + ".";
@@ -177,12 +178,13 @@ const THERMAZ = {
     }
     statusEl.className = "status"; statusEl.textContent = "Envoi en cours…";
     try {
-      const r = await fetch("https://api.web3forms.com/submit", {
+      // Envoi « simple » (sans pré-vérification CORS) : Google ne renvoie pas de réponse lisible,
+      // seule une panne réseau fait échouer l'envoi.
+      await fetch(THERMAZ.leadEndpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify(Object.assign({ access_key: THERMAZ.web3formsKey, subject, from_name: "Site Thermaz" }, data))
+        mode: "no-cors",
+        body: new URLSearchParams({ payload: JSON.stringify(data) })
       });
-      if (!r.ok) throw new Error();
       statusEl.className = "status ok"; statusEl.textContent = "Demande envoyée. Je vous rappelle dans la journée.";
       track("generate_lead", { prestation: data.prestation || "", commune: data.commune || "", estimation: data.estimation || "" });
       // Page de remerciement : sert aussi de page de conversion pour Google Ads
@@ -201,7 +203,7 @@ const THERMAZ = {
     e.preventDefault();
     const st = $(".status", f), d = Object.fromEntries(new FormData(f));
     if (!d.nom || !d.telephone || !d.commune) { st.className = "status err"; st.textContent = "Indiquez votre nom, votre téléphone et votre commune pour que je puisse vous rappeler."; return; }
-    if (await sendLead(d, st) && THERMAZ.web3formsKey) f.reset();
+    if (await sendLead(d, st) && THERMAZ.leadEndpoint) f.reset();
   }));
 
   /* ---- Calculateur de prix (page installation) ---- */
@@ -468,7 +470,7 @@ const THERMAZ = {
       Object.assign(d, { bien: A.bien, commune: A.commune, delai: A.delai || "Dès que possible", nom: A.nom, telephone: A.telephone, email: A.email || "", message: A.message || "", estimation: estimate() });
       el(".qw-next").disabled = true;
       const ok = await sendLead(d, el(".qw-status"));
-      if (ok && THERMAZ.web3formsKey) {
+      if (ok && THERMAZ.leadEndpoint) {
         el(".qw-content").innerHTML = '<div class="qw-done"><b>Merci ' + esc((A.nom || "").split(" ")[0]) + ", votre demande est envoyée.</b><p>Je vous rappelle dans la journée au " + esc(A.telephone) + ".</p></div>";
         el(".qw-nav").hidden = true;
       } else el(".qw-next").disabled = false;
