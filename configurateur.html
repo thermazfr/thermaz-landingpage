@@ -21,41 +21,83 @@
 <link rel="apple-touch-icon" href="assets/favicon.svg">
 <link rel="stylesheet" href="assets/site.css">
 <style>
-.cfg-rating{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--on-band);text-decoration:none;font-size:15px}
-.cfg-rating i{font-style:normal;color:#F5B400;letter-spacing:1px}
-.cfg-rating:hover span{text-decoration:underline}
-.cfg-rooms{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin-top:18px}
-.cfg-room{border:1.5px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;display:grid;gap:6px;font-size:14px;font-weight:600;color:var(--muted)}
-.cfg-step{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.cfg-step output{font-weight:700;color:var(--fg);font-size:17px;font-variant-numeric:tabular-nums}
-.cfg-step button{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;font-size:20px;cursor:pointer}
-.cfg-step button:hover{border-color:var(--cold)}
-.cfg-filters{display:grid;gap:12px;margin-bottom:16px}
-.cfg-filters .seg label{padding:8px 14px;font-size:14px}
-.cfg-models{display:grid;gap:10px}
-.cfg-model input{position:absolute;opacity:0;pointer-events:none}
-.cfg-model label{display:grid;grid-template-columns:64px 1fr auto;align-items:center;gap:14px;border:1.5px solid var(--line);border-radius:var(--r);padding:10px 14px 10px 10px;cursor:pointer;background:var(--surface)}
-.cfg-model img,.cfg-noimg{width:64px;height:64px;border-radius:12px;object-fit:cover;background:var(--alt)}
-.cfg-noimg{display:grid;place-items:center;font-weight:800;font-size:24px;color:var(--muted)}
-.cfg-mtxt{display:grid;gap:2px;min-width:0}
-.cfg-mtxt b{font-size:16px}
-.cfg-mtxt span{font-size:14px;color:var(--muted)}
-.cfg-mprice{font-weight:800;font-size:19px;font-variation-settings:"wdth" 78;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
-.cfg-mprice small{display:block;font-weight:500;font-size:12px;color:var(--muted)}
-.cfg-model input:checked+label{border-color:var(--cold);background:var(--cold-soft)}
-.cfg-model input:focus-visible+label{outline:3px solid var(--cold);outline-offset:2px}
-.cfg-block{display:grid;gap:10px;margin-bottom:22px}
-.cfg-block h4{font-size:17px}
-.cfg-check{display:flex;gap:12px;align-items:flex-start;border:1.5px solid var(--line);border-radius:var(--r);padding:14px 16px;cursor:pointer}
-.cfg-check input{width:22px;height:22px;accent-color:var(--cold);margin-top:2px;flex:none}
-.cfg-check b{display:block}
-.cfg-check span{font-size:14px;color:var(--muted)}
-.cfg-offer{background:rgba(255,255,255,.08);border-radius:var(--r-sm);padding:10px 14px;font-size:14.5px;font-weight:600}
-.cfg-mini{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border:1.5px solid var(--line);border-radius:var(--r-sm);padding:10px 14px;font-weight:600;position:sticky;top:72px;z-index:5;background:var(--surface);box-shadow:var(--shadow)}
-.cfg-mini b{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--warm)}
-@media (min-width:900px){.cfg-mini{display:none}}
-@media (max-width:899px){#cfg{overflow:visible}#cfg .recap{border-radius:var(--r-lg) var(--r-lg) 0 0}}
-@media (max-width:520px){.cfg-model label{grid-template-columns:52px 1fr;}.cfg-model img,.cfg-noimg{width:52px;height:52px}.cfg-mprice{grid-column:2;text-align:left}}
+/* Configurateur : une seule page, présentée comme une fiche produit */
+.cf-wrap{padding-block:18px 120px}
+.cf-crumb{font-size:13.5px;color:var(--muted);margin-bottom:16px}
+.cf-crumb a{color:var(--muted)}
+.cf{display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
+.cf-media{position:relative}
+.cf-visual{background:linear-gradient(180deg,#F3F6F9,#E9EEF3);border-radius:var(--r-lg);aspect-ratio:16/10;display:grid;place-items:center;overflow:hidden}
+.cf-visual svg{width:88%;height:auto;filter:drop-shadow(0 12px 18px rgba(13,27,42,.10))}
+.cf-badges{position:absolute;top:12px;left:12px;display:flex;gap:6px}
+.cf-badge{background:#fff;color:#0D1B2A;border:1px solid #DCE3EA;border-radius:999px;padding:4px 10px;font-size:12.5px;font-weight:700}
+.cf-badge-g{background:#0D1B2A;color:#fff;border-color:#0D1B2A}
+.cf-note{font-size:12.5px;color:var(--muted);margin-top:8px}
+.cf-brand{font-size:14px;font-weight:700;color:var(--cold);text-transform:uppercase;letter-spacing:.06em}
+.cf-name{font-size:clamp(26px,4.2vw,36px);font-weight:750;font-variation-settings:"wdth" 92;letter-spacing:-.025em;line-height:1.08;margin-top:4px}
+.cf-rating{display:inline-flex;gap:6px;align-items:center;margin-top:8px;font-size:14.5px;font-weight:650;color:var(--fg);text-decoration:none}
+.cf-rating i{font-style:normal;color:#F5B400;letter-spacing:1px}
+.cf-price{display:flex;align-items:baseline;gap:8px;margin-top:16px}
+.cf-price b{font-size:clamp(36px,6vw,46px);font-weight:800;font-variation-settings:"wdth" 82;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.cf-price span{font-weight:700;color:var(--muted)}
+.cf-incl{font-size:14.5px;color:var(--muted);margin-top:2px}
+.cf-facts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+.cf-facts div{background:var(--alt);border-radius:12px;padding:10px 8px;text-align:center}
+.cf-facts dt{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.cf-facts dd{margin:3px 0 0;font-weight:700;font-size:14.5px;line-height:1.2}
+.cf-sec{margin-top:24px}
+.cf-sec h2{font-size:13px;font-weight:750;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px}
+.cf-sec h2 span{font-weight:600;text-transform:none;letter-spacing:0}
+.cf-sub{font-size:14px;font-weight:600;margin-bottom:8px}
+.cf-chips{display:flex;flex-wrap:wrap;gap:8px}
+.cf-chip{position:relative;cursor:pointer}
+.cf-chip input{position:absolute;opacity:0;pointer-events:none}
+.cf-chip>span{display:flex;align-items:baseline;gap:7px;border:1.5px solid var(--line);border-radius:12px;padding:11px 15px;font-weight:650;font-size:15px;background:var(--surface);transition:border-color .15s,background .15s}
+.cf-chip small{font-weight:500;font-size:13px;color:var(--muted)}
+.cf-chip:hover>span{border-color:color-mix(in srgb,var(--warm) 45%,var(--line))}
+.cf-chip input:checked+span,.cf-static>span{border-color:var(--warm);background:color-mix(in srgb,var(--warm) 7%,var(--surface));color:var(--warm)}
+.cf-chip input:checked+span small{color:color-mix(in srgb,var(--warm) 75%,var(--fg))}
+.cf-chip input:focus-visible+span{outline:3px solid var(--cold);outline-offset:2px}
+.cf-static{cursor:default}
+.cf-rec small{color:var(--ok)}
+.cf-rooms{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));margin-top:12px}
+.cf-rooms-1{grid-template-columns:minmax(0,320px);margin-top:0}
+.cf-room{background:var(--alt);border-radius:14px;padding:10px 12px;display:grid;gap:8px}
+.cf-room>span{font-size:12px;font-weight:750;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.cf-step{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.cf-step output{font-weight:800;font-size:19px;font-variant-numeric:tabular-nums;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:6px 6px;min-width:62px;text-align:center;white-space:nowrap}
+.cf-step output small{font-weight:500;font-size:13px;color:var(--muted)}
+.cf-step button{width:40px;height:40px;flex:none;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--fg) 25%,transparent);background:var(--surface);color:var(--fg);font:inherit;font-size:22px;line-height:1;cursor:pointer}
+.cf-step button:hover{border-color:var(--fg)}
+.cf-hint{font-size:13.5px;color:var(--muted);margin-top:8px}
+.cf-offer{margin-top:20px;background:color-mix(in srgb,var(--ok) 10%,var(--surface));color:var(--fg);border-radius:12px;padding:12px 14px;font-weight:650;font-size:14.5px}
+.cf-total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:26px;padding-top:18px;border-top:1.5px solid var(--line)}
+.cf-total span{font-weight:700}
+.cf-total b{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
+.cf-ctas{display:grid;gap:10px;margin-top:16px}
+.cf-ctas .btn{width:100%;padding-block:16px;font-size:17px}
+.cf-unsure{margin-top:22px;border:1.5px dashed var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:4px;font-size:14.5px}
+.cf-unsure span{color:var(--muted)}
+.cf-unsure .btn{margin-top:8px;justify-self:start}
+.cf-chip em{font-style:normal;font-weight:500}
+.cf-more{border:none;background:none;font:inherit;font-weight:650;font-size:14.5px;color:var(--cold);text-decoration:underline;cursor:pointer;padding:11px 4px}
+.cf-form{margin-top:26px;border:1.5px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:14px;scroll-margin-top:84px}
+.cf-form h2{font-size:22px;letter-spacing:-.01em}
+.cf-send{width:100%;padding-block:16px;font-size:17px}
+.cf-bar{align-items:center}
+.cf-bar .btn{flex:1}
+.cf-bar-p{display:grid;line-height:1.1;flex:none}
+.cf-bar-p small{font-size:11.5px;color:var(--muted);font-weight:600}
+.cf-bar-p b{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.cf-bar-tel{flex:none;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;border:1.5px solid color-mix(in srgb,var(--fg) 22%,transparent);color:var(--fg)}
+@media (min-width:900px){
+ .cf{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:start}
+ .cf-media{position:sticky;top:calc(var(--hdr-h) + 20px)}
+ .cf-wrap{padding-block:26px 80px}
+ .cf-ctas{grid-template-columns:1fr 1fr}
+}
+@media (max-width:899px){.cf-visual{aspect-ratio:16/8}}
+@media (max-width:420px){.cf-facts{grid-template-columns:repeat(2,1fr)}.cf-chip>span{padding:10px 13px;font-size:14.5px}}
 </style>
 </head>
 <body>
@@ -66,7 +108,7 @@
     <nav class="nav" aria-label="Navigation principale">
       <div class="dd"><button type="button" aria-expanded="false">Services</button><div class="dd-menu"><a href="installation-climatisation.html">Installation<span>Mono et multisplit, prix affichés</span></a><a href="entretien-climatisation.html">Entretien<span>Nettoyage et contrat annuel</span></a><a href="depannage-climatisation.html">Dépannage<span>Panne, fuite, clim qui ne refroidit plus</span></a><a href="plomberie.html">Plomberie<span>Fuites, sanitaires, robinetterie</span></a></div></div>
       <a href="installation-climatisation.html#tarifs">Nos prix</a>
-      <div class="dd"><button type="button" aria-expanded="false">Outils</button><div class="dd-menu"><a href="calcul-puissance-climatisation.html">Calcul de puissance<span>Quelle clim pour ma pièce ?</span></a><a href="convertisseur-btu-kw.html">Convertisseur BTU ↔ kW<span>Comprendre les fiches techniques</span></a><a href="configurateur.html">Configurateur de prix<span>Votre clim et son prix posé, en direct</span></a></div></div>
+      <div class="dd"><button type="button" aria-expanded="false">Outils</button><div class="dd-menu"><a href="calcul-puissance-climatisation.html">Calcul de puissance<span>Quelle clim pour ma pièce ?</span></a><a href="convertisseur-btu-kw.html">Convertisseur BTU ↔ kW<span>Comprendre les fiches techniques</span></a><a href="installation-climatisation.html#prix">Simulateur de prix<span>Votre prix posé en 20 secondes</span></a></div></div>
       <div class="dd"><button type="button" aria-expanded="false">Zones</button><div class="dd-menu"><a href="climatisation-salon-de-provence.html">Salon-de-Provence<span>Basé ici</span></a><a href="climatisation-pelissanne.html">Pélissanne<span>à 6 km de Salon</span></a><a href="climatisation-lancon-provence.html">Lançon-Provence<span>à 10 km de Salon</span></a><a href="climatisation-miramas.html">Miramas<span>à 15 km de Salon</span></a><a href="climatisation-istres.html">Istres<span>à 22 km de Salon</span></a><a href="climatisation-aix-en-provence.html">Aix-en-Provence<span>à 35 km de Salon</span></a></div></div>
       <a href="blog.html">Conseils</a>
       <a href="index.html#avis">Avis</a>
@@ -79,67 +121,55 @@
   </div>
 </header>
 <main id="main">
-<section class="band phero" style="padding-block:44px 40px"><div class="wrap"><p class="crumb"><a href="index.html">Accueil</a> / Configurateur</p>
-<h1>Votre clim, votre prix, tout de suite</h1><p class="lead">Choisissez le type, la marque, le modèle et la distance du groupe extérieur : le prix TTC posé s'affiche en direct. Je le confirme après une visite ou quelques photos, sans surprise.</p></div></section>
-<section class="sec-tight"><div class="wrap">
-<form class="wiz" id="cfg" novalidate>
- <aside class="recap" aria-live="polite">
-  <h2>Votre projet</h2>
-  <a class="cfg-rating" href="https://share.google/W5HG0BT9uZtVYETqS" target="_blank" rel="noopener"><i aria-hidden="true">★★★★★</i><span>5/5 sur Google</span></a>
-  <dl><div><dt>Type</dt><dd id="r-type">–</dd></div><div><dt>Pièces</dt><dd id="r-surface">–</dd></div><div><dt>Modèle</dt><dd id="r-model">–</dd></div><div><dt>Options</dt><dd id="r-opts">–</dd></div></dl>
-  <div class="est"><span class="muted small">Prix TTC posé</span><b id="r-est">À calculer</b><span class="muted small">Matériel, pose standard et mise en service compris. Confirmé après visite ou photos.</span></div>
-  <p class="cfg-offer" id="r-offer" data-offer-until="2026-11-15" hidden>1er entretien offert pour un devis signé avant le 15 novembre.</p>
- </aside>
- <div class="wiz-body">
-  <div class="prog"><div class="prog-top"><span id="c-count-step">Étape 1 / 5</span><span id="c-name"></span></div><div class="bar"><i></i></div></div>
-  <div class="cfg-mini" aria-hidden="true"><span>Votre prix</span><b>–</b></div>
+<div class="wrap cf-wrap">
+<p class="cf-crumb"><a href="index.html">Accueil</a> › <a href="installation-climatisation.html">Installation</a> › Prix clim posée</p>
+<form id="cfg" class="cf" novalidate>
+ <div class="cf-media">
+  <div class="cf-visual" id="c-visual"></div>
+  <div class="cf-badges" id="c-badges"></div>
+  <p class="cf-note">Visuel indicatif. Photos et fiche technique du modèle envoyées avec le devis.</p>
+ </div>
+ <div class="cf-main">
+  <p class="cf-brand" id="c-brand"></p>
+  <h1 class="cf-name" id="c-name">Votre clim posée</h1>
+  <a class="cf-rating" href="https://share.google/W5HG0BT9uZtVYETqS" target="_blank" rel="noopener"><i aria-hidden="true">★★★★★</i> 5/5 sur Google</a>
+  <div class="cf-price" aria-live="polite"><b class="c-total">–</b><span>TTC</span></div>
+  <p class="cf-incl">Prix incluant climatiseur, accessoires et pose</p>
+  <dl class="cf-facts" id="c-facts"></dl>
 
-  <div class="wiz-step" data-name="Type"><h3>Quel type de climatisation ?</h3><div class="opts">
-   <div class="opt"><input type="radio" name="c-type" id="c-t-murale" value="murale"><label for="c-t-murale"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="6" width="19" height="8" rx="2"/><path d="M6 11h12M7 17l-1 2M12 17v2M17 17l1 2"/></svg><b>Murale</b><span>Une pièce, montée au mur</span></label></div>
-   <div class="opt"><input type="radio" name="c-type" id="c-t-multi" value="multi"><label for="c-t-multi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="3" width="9" height="5" rx="1.5"/><rect x="13" y="3" width="9" height="5" rx="1.5"/><rect x="7" y="15" width="10" height="6" rx="1.5"/><path d="M6.5 8v4h11V8M12 12v3"/></svg><b>Plusieurs pièces</b><span>2 à 4 unités, un seul groupe</span></label></div>
-   <div class="opt"><input type="radio" name="c-type" id="c-t-console" value="console"><label for="c-t-console"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M8 8h8M8 11h8M8 16h8"/></svg><b>Console</b><span>Une pièce, posée au sol</span></label></div>
-   <div class="opt"><input type="radio" name="c-type" id="c-t-gainable" value="gainable"><label for="c-t-gainable"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="8" width="18" height="7" rx="1.5"/><path d="M6 15v3M18 15v3M3 5h18"/></svg><b>Gainable</b><span>Invisible, bouches au plafond</span></label></div>
-   <div class="opt"><input type="radio" name="c-type" id="c-t-monobloc" value="monobloc"><label for="c-t-monobloc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/></svg><b>Monobloc</b><span>Sans groupe extérieur</span></label></div></div></div>
+  <div class="cf-sec"><h2>Type de clim</h2><div class="cf-chips" id="c-type"></div></div>
+  <div class="cf-sec"><h2>Surface à climatiser</h2><div id="c-surface"></div></div>
+  <div class="cf-sec"><h2>Gamme</h2><div class="cf-chips" id="c-gamme"></div></div>
+  <div class="cf-sec"><h2>Modèle <span>(prix posé)</span></h2><div class="cf-chips" id="c-model"></div></div>
+  <div class="cf-sec"><h2>Puissance <span>(calculée pour vous)</span></h2><div class="cf-chips" id="c-power"></div><p class="cf-hint" id="c-power-hint"></p></div>
+  <div class="cf-sec"><h2>Raccordement frigorifique</h2><div class="cf-chips" id="c-liaison"></div><p class="cf-hint">Distance entre l'unité intérieure et le groupe extérieur. En cas de doute, laissez la plus courte : je mesure à la visite.</p></div>
+  <div class="cf-sec"><h2>Compris dans le prix</h2><div class="cf-chips"><span class="cf-chip cf-static"><span>✓ Accessoires</span></span><span class="cf-chip cf-static"><span>✓ Installation et mise en service</span></span></div></div>
+  <div class="cf-sec"><h2>Contrat d'entretien <span>(optionnel)</span></h2><div class="cf-chips" id="c-contrat"></div></div>
+  <p class="cf-offer" id="c-offer" data-offer-until="2026-11-15" hidden>🎁 1er entretien offert pour un devis signé avant le 15 novembre.</p>
 
-  <div class="wiz-step" data-name="Pièces" hidden><h3>Quelle surface à climatiser ?</h3>
-   <div class="field" id="c-surface"><label for="c-m2">Surface de la pièce</label><div class="range"><input type="range" id="c-m2" min="10" max="70" step="1" value="25"><output id="c-m2-out" for="c-m2">25 m²</output></div><p class="hint">La puissance est calculée pour vous (environ 100 W par m²). Je la vérifie sur place : hauteur sous plafond, exposition, isolation.</p></div>
-   <div id="c-rooms" hidden></div></div>
+  <div class="cf-total"><span>Total TTC posé</span><b class="c-total">–</b></div>
+  <p class="cf-hint" id="c-contrat-line"></p>
+  <div class="cf-ctas"><a class="btn btn-warm" href="#c-form" data-open-form>Recevoir mon devis</a><a class="btn btn-line" href="tel:+33651106435">Appeler 06 51 10 64 35</a></div>
+  <p class="cf-hint">Prix pour une pose standard : matériel, liaisons, supports, goulottes et mise en service compris. Un supplément éventuel (pompe de relevage, nacelle, percement difficile) est toujours écrit dans le devis, avant tout engagement.</p>
 
-  <div class="wiz-step" data-name="Modèle" hidden><h3>Choisissez votre modèle</h3>
-   <div class="cfg-filters">
-    <div class="seg" role="radiogroup" aria-label="Gamme"><input type="radio" name="c-gamme" id="c-g-all" value="toutes" checked><label for="c-g-all">Toutes gammes</label><input type="radio" name="c-gamme" id="c-g-ess" value="ess"><label for="c-g-ess">Essentielle<small>Fiable, petit prix</small></label><input type="radio" name="c-gamme" id="c-g-pre" value="pre"><label for="c-g-pre">Premium<small>Daikin, Mitsubishi Electric</small></label></div>
-    <div class="seg" id="c-marques" role="radiogroup" aria-label="Marque"></div>
-    <p class="hint" id="c-count"></p></div>
-   <div class="cfg-models" id="c-models"></div>
-   <p class="hint">Les photos sont celles de mes chantiers. Prix posés, puissance adaptée à votre surface.</p></div>
+  <div class="cf-unsure"><b>Pas encore sûr ?</b><span>Envoyez-moi 2 photos de la pièce : je vous conseille gratuitement le bon modèle.</span><a class="btn btn-line" id="c-sms" href="sms:+33651106435">📷 Envoyer mes photos par SMS</a></div>
 
-  <div class="wiz-step" data-name="Options" hidden><h3>Les options</h3>
-   <div class="cfg-block" id="c-liaison-wrap"><h4>Distance entre l'unité intérieure et le groupe extérieur</h4><div id="c-liaison"></div><p class="hint">Mesurée en suivant le passage des tuyaux (liaisons frigorifiques). En cas de doute, choisissez la plus courte : je mesure à la visite.</p></div>
-   <div class="cfg-block"><h4>Entretien</h4><label class="cfg-check"><input type="checkbox" id="c-contrat"><span><b>Contrat d'entretien annuel : <span id="c-contrat-txt">149 €/an</span></b><span>Une visite chaque printemps, priorité en cas de panne, garantie de pose prolongée. Sans engagement de durée.</span></span></label></div></div>
-
-  <div class="wiz-step" data-name="Coordonnées" hidden><h3>Recevez votre devis détaillé</h3>
-   <p class="hint" style="margin:-6px 0 16px">Je vous rappelle dans la journée pour caler une visite gratuite. Votre prix reste celui affiché pour une pose standard.</p>
-   <div style="display:grid;gap:14px">
-   <div class="opts" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
-    <div class="opt"><input type="radio" name="c-bien" id="c-b-maison" value="maison"><label for="c-b-maison"><b>Maison</b></label></div>
-    <div class="opt"><input type="radio" name="c-bien" id="c-b-appart" value="appartement"><label for="c-b-appart"><b>Appartement</b></label></div>
-    <div class="opt"><input type="radio" name="c-bien" id="c-b-pro" value="pro"><label for="c-b-pro"><b>Local pro</b></label></div></div>
+  <div class="cf-form" id="c-form" hidden>
+   <h2>Recevez votre devis détaillé</h2>
+   <p class="cf-hint">Je vous rappelle dans la journée pour caler une visite gratuite. Votre prix reste celui affiché pour une pose standard.</p>
    <div class="f2"><div class="field"><label for="c-nom">Prénom et nom</label><input id="c-nom" autocomplete="name"></div>
    <div class="field"><label for="c-tel">Téléphone</label><input id="c-tel" type="tel" autocomplete="tel"></div></div>
    <div class="f2"><div class="field"><label for="c-commune">Commune</label><input id="c-commune" autocomplete="address-level2" placeholder="Salon-de-Provence"></div>
    <div class="field"><label for="c-mail">E-mail (facultatif)</label><input id="c-mail" type="email" autocomplete="email"></div></div>
    <div class="f2"><div class="field"><label for="c-delai">Quand ?</label><select id="c-delai"><option>Dès que possible</option><option>Dans le mois</option><option>Dans les 3 mois</option><option>Je me renseigne</option></select></div>
-   <div class="field"><label for="c-source">Comment m'avez-vous connu ?</label><select id="c-source"><option value="">Choisir</option><option>Recherche Google</option><option>Google Maps</option><option>Bouche-à-oreille</option><option>Réseaux sociaux</option><option>Véhicule / chantier vu</option><option>Autre</option></select></div></div>
-   <div class="field"><label for="c-msg">Précisions (facultatif)</label><textarea id="c-msg" placeholder="Étage, emplacement du groupe extérieur, copropriété…"></textarea></div></div></div>
-
-  <p class="status err" id="c-err" role="alert"></p>
-  <div class="wiz-nav"><button type="button" class="btn btn-line" id="c-prev">Retour</button><span></span>
-   <button type="button" class="btn btn-ink" id="c-next">Continuer</button><button type="submit" class="btn btn-warm" id="c-send" hidden>Recevoir mon devis</button></div>
-  <p class="status" id="c-status" role="status"></p>
+   <div class="field"><label for="c-msg">Précisions (facultatif)</label><input id="c-msg" placeholder="Étage, copropriété…"></div></div>
+   <p class="status err" id="c-err" role="alert"></p>
+   <button type="submit" class="btn btn-warm cf-send" id="c-send">Envoyer ma demande</button>
+   <p class="status" id="c-status" role="status"></p>
+  </div>
  </div>
 </form>
-<p class="hint" style="margin-top:16px">Prix TTC pour une pose standard : matériel, liaisons, supports, goulottes et mise en service compris. Un supplément éventuel (pompe de relevage, nacelle, percement difficile) est toujours écrit dans le devis, avant tout engagement. Plus rapide : appelez le <a href="tel:+33651106435">06 51 10 64 35</a>.</p>
-</div></section>
+</div>
 </main>
 <footer class="ftr">
   <div class="wrap">
@@ -151,13 +181,13 @@
         <a href="mailto:thermaz.fr@gmail.com">thermaz.fr@gmail.com</a>
       </div>
       <div><h4>Services</h4><ul><li><a href="installation-climatisation.html">Installation</a></li><li><a href="entretien-climatisation.html">Entretien</a></li><li><a href="depannage-climatisation.html">Dépannage</a></li><li><a href="plomberie.html">Plomberie</a></li><li><a href="devis.html">Demander un devis</a></li></ul></div>
-      <div><h4>Outils</h4><ul><li><a href="calcul-puissance-climatisation.html">Calcul de puissance</a></li><li><a href="convertisseur-btu-kw.html">Convertisseur BTU ↔ kW</a></li><li><a href="configurateur.html">Configurateur de prix</a></li><li><a href="blog.html">Conseils clim</a></li><li><a href="questions-climatisation.html">Questions fréquentes</a></li><li><a data-review-link href="#">Laisser un avis Google</a></li></ul></div>
+      <div><h4>Outils</h4><ul><li><a href="calcul-puissance-climatisation.html">Calcul de puissance</a></li><li><a href="convertisseur-btu-kw.html">Convertisseur BTU ↔ kW</a></li><li><a href="installation-climatisation.html#prix">Simulateur de prix</a></li><li><a href="blog.html">Conseils clim</a></li><li><a href="questions-climatisation.html">Questions fréquentes</a></li><li><a data-review-link href="#">Laisser un avis Google</a></li></ul></div>
       <div><h4>Zones</h4><ul><li><a href="climatisation-salon-de-provence.html">Climatisation Salon-de-Provence</a></li><li><a href="climatisation-pelissanne.html">Climatisation Pélissanne</a></li><li><a href="climatisation-lancon-provence.html">Climatisation Lançon-Provence</a></li><li><a href="climatisation-miramas.html">Climatisation Miramas</a></li><li><a href="climatisation-istres.html">Climatisation Istres</a></li><li><a href="climatisation-aix-en-provence.html">Climatisation Aix-en-Provence</a></li></ul></div>
     </div>
     <div class="ftr-bottom"><span>© <span data-year>2026</span> Thermaz</span><a href="mentions-legales.html">Mentions légales</a><a href="mentions-legales.html#cookies">Cookies</a></div>
   </div>
 </footer>
-<div class="callbar"><a class="btn btn-line" href="devis.html">Devis gratuit</a><a class="btn btn-warm" href="tel:+33651106435">Appeler</a></div>
+<div class="callbar cf-bar"><span class="cf-bar-p"><small>Total TTC posé</small><b class="c-total">–</b></span><a class="btn btn-warm" href="#c-form" data-open-form>Recevoir mon devis</a><a class="cf-bar-tel" href="tel:+33651106435" aria-label="Appeler le 06 51 10 64 35"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></a></div>
 <script src="assets/site.js"></script>
 <script src="assets/configurateur.js"></script>
 </body>
