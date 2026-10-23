@@ -197,6 +197,8 @@ const THERMAZ = {
       return false;
     }
   }
+  // Utilisé par le configurateur de prix (assets/configurateur.js)
+  window.thermazSendLead = sendLead;
 
   /* ---- Formulaires simples ---- */
   $$("form[data-lead]").forEach(f => f.addEventListener("submit", async e => {
