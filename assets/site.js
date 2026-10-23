@@ -323,7 +323,11 @@ const THERMAZ = {
     $("#w-next").addEventListener("click", () => { if (valid()) show(i + 1); });
     $("#w-prev").addEventListener("click", () => show(i - 1));
     $$("input,select", wiz).forEach(el => el.addEventListener("input", recap));
-    $$('.opt input[type=radio]', wiz).forEach(el => el.addEventListener("change", () => { if (i < 3) setTimeout(() => { if (valid()) show(i + 1); }, 180); }));
+    $$('.opt input[type=radio]', wiz).forEach(el => el.addEventListener("change", () => {
+      // Installation d'un type connu : le client fait son prix lui-même dans le configurateur
+      if (el.name === "type" && el.value !== "conseil") { location.href = "configurateur.html?type=" + encodeURIComponent(el.value); return; }
+      if (i < 3) setTimeout(() => { if (valid()) show(i + 1); }, 180);
+    }));
     wiz.addEventListener("submit", async e => {
       e.preventDefault();
       const st = $("#w-status");
@@ -448,6 +452,11 @@ const THERMAZ = {
       if (b.dataset.room) { A.pieces = b.dataset.room; $$(".qchip", qw).forEach(x => x.classList.toggle("on", x === b)); return refresh(); }
       if (b.dataset.bien) { A.bien = b.dataset.bien; $$(".qo", qw).forEach(x => x.classList.toggle("on", x === b)); return refresh(); }
       if (b.dataset.v !== undefined) {
+        // Installation : on continue dans le configurateur, où le client voit son prix modèle par modèle
+        if (flow === "installation" && s.key === "type") {
+          location.href = "configurateur.html" + (b.dataset.v !== "conseil" ? "?type=" + encodeURIComponent(b.dataset.v) : "");
+          return;
+        }
         A[s.key] = b.dataset.v;
         $$(".qo,.qchip", qw).forEach(x => x.classList.toggle("on", x === b));
         refresh();

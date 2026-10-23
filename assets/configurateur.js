@@ -238,9 +238,28 @@
     if (!ok) $("#c-send").disabled = false;
   });
 
+  /* ---- Préréglage depuis un lien (cartes de prix, devis) : ?type=murale&m2=35&gamme=pre&pieces=2 ---- */
+  function preset() {
+    const q = new URLSearchParams(location.search);
+    const type = q.get("type");
+    if (!TYPES[type]) return 0;
+    S.type = type;
+    const r = $("#c-t-" + type); if (r) r.checked = true;
+    const m2 = Math.max(10, Math.min(70, +q.get("m2") || 25));
+    S.m2 = m2; $("#c-m2").value = m2; $("#c-m2-out").textContent = m2 + " m²";
+    if (type === "multi") { const n = Math.max(2, Math.min(4, +q.get("pieces") || 2)); S.rooms = [18, 12, 12, 12].slice(0, n); }
+    else if (type === "gainable") S.rooms = [18, 17];   // ≈ 35 m², le plus petit gainable (prix « à partir de » des cartes)
+    else S.rooms = [m2];
+    const g = q.get("gamme");
+    if (g === "ess" || g === "pre") { S.gamme = g; const gr = $("#c-g-" + g); if (gr) gr.checked = true; }
+    // Une pièce : on va droit au choix du modèle ; plusieurs pièces / gainable : on règle d'abord les surfaces
+    return type === "multi" || type === "gainable" ? 1 : 2;
+  }
+
   /* ---- Démarrage ---- */
-  fetch("data/catalogue.json").then(r => r.json()).then(d => { CAT = d; show(0); }).catch(() => {
+  const start = preset();
+  fetch("data/catalogue.json").then(r => r.json()).then(d => { CAT = d; show(start); }).catch(() => {
     $("#c-err").textContent = "Le catalogue n'a pas pu se charger. Appelez le 06 51 10 64 35, je vous donne le prix au téléphone.";
   });
-  show(0);
+  show(start);
 })();
