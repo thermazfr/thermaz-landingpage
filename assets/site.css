@@ -23,11 +23,7 @@
   --hdr-h:64px;
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#081019;--surface:#0F1B27;--alt:#0C1621;--fg:#EAF0F5;--muted:#9DAEBF;--line:#1F3244;
-  --band:#050B11;--on-band:#F2F6F9;--on-band-muted:#9FB2C2;
-  --cold:#5EA3EE;--cold-soft:#122E4A;--warm:#D3381F;--warm-deep:#B52E18;--warm-ink:#FFFFFF;--ok:#4CC27F;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 14px 36px -12px rgba(0,0,0,.5);color-scheme:dark}}
+/* Site toujours en clair, même si le téléphone est en mode sombre (choix d'Andy, 23/10) */
 :root[data-theme="dark"]{
   --bg:#081019;--surface:#0F1B27;--alt:#0C1621;--fg:#EAF0F5;--muted:#9DAEBF;--line:#1F3244;
   --band:#050B11;--on-band:#F2F6F9;--on-band-muted:#9FB2C2;
@@ -513,6 +509,4 @@ legend{font-weight:700;font-size:15.5px;margin-bottom:10px;padding:0}
 /* ---------- Offre limitée dans le temps (masquée après sa date par site.js) ---------- */
 .offer{display:inline-block;margin:14px 0 4px;padding:10px 16px;border-radius:12px;background:rgba(211,56,31,.14);border:1px solid rgba(211,56,31,.45);font-size:15.5px;line-height:1.45;max-width:62ch}
 .offer b,.h-hp-offer b{display:inline-block;margin-right:8px;padding:2px 9px;border-radius:999px;background:var(--warm);color:#fff;font-size:12.5px;letter-spacing:.02em;text-transform:uppercase;vertical-align:1px}
-.t-offer{margin:2px 0 6px;font-size:14.5px;font-weight:650;color:var(--warm-deep)}
-@media (prefers-color-scheme:dark){.t-offer{color:#FF8A73}}
-[data-offer-until][hidden]{display:none!important}
+.t-offer{margin:2px 0 6px;font-size:14.5px;font-weight:650;color:var(--warm-deep)}[data-offer-until][hidden]{display:none!important}
