@@ -52,6 +52,19 @@ const THERMAZ = {
     if (m) track("email_click");
   });
 
+  /* ---- Appels depuis le site : numéro de transfert Google pour les visiteurs venus d'une annonce ---- */
+  // Google ne donne ce numéro qu'aux visiteurs arrivés par une annonce ; il sonne sur le 06 51 10 64 35
+  // et compte l'appel (plus de 60 s) dans la conversion « Appel depuis le site ». Texte ET liens tel: sont remplacés.
+  if (typeof window.gtag === "function") window.gtag("config", "AW-18453499766/1Iu9CKmW0KkdEPaeqN9E", {
+    phone_conversion_number: "06 51 10 64 35",
+    phone_conversion_callback: (formatted, mobile) => {
+      if (!formatted || !mobile) return;
+      document.querySelectorAll('a[href="tel:+33651106435"]').forEach(a => a.setAttribute("href", "tel:" + mobile));
+      const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n; (n = w.nextNode());) if (n.nodeValue.includes("06 51 10 64 35")) n.nodeValue = n.nodeValue.split("06 51 10 64 35").join(formatted);
+    }
+  });
+
   /* ---- Bandeau cookies : rien n'est mesuré sans accord ---- */
   (function consent() {
     let choice = null;
