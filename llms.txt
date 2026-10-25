@@ -11,10 +11,11 @@
 - Avis Google : voir la fiche « Thermaz climatisation »
 
 ## Prix (TTC, pose standard comprise)
-- Climatisation murale 2,5 kW : dès 1 290 € (gamme essentielle), dès 1 590 € (premium Mitsubishi Electric, Daikin)
-- Climatisation murale 3,5 kW : dès 1 450 €
-- Climatisation murale 5 kW : dès 2 050 €
-- Bisplit (2 pièces) : dès 2 390 €
+Une climatisation réversible est une pompe à chaleur air-air : elle chauffe l'hiver et rafraîchit l'été. En travaux seuls, elle n'est pas éligible à MaPrimeRénov'.
+- Climatisation réversible murale 2,5 kW : dès 1 263 € (gamme essentielle), dès 1 447 € (premium Mitsubishi Electric, Daikin)
+- Climatisation réversible murale 3,5 kW : dès 1 361 € (essentielle), dès 1 591 € (premium)
+- Climatisation réversible murale 5 kW : dès 1 659 € (essentielle), dès 2 006 € (premium)
+- Bisplit (2 pièces) : dès 3 124 € (essentielle), dès 3 594 € (premium)
 - Nettoyage complet (intérieur et extérieur) : 159 € par unité
 - Contrat d'entretien annuel : 149 €/an
 
@@ -25,6 +26,7 @@
 - Déplacement gratuit dans un rayon d'environ 15 à 20 km autour de Salon-de-Provence
 
 ## Pages utiles
+- [Chauffage par pompe à chaleur air-air et prix](https://thermaz.fr/chauffage-pompe-a-chaleur-air-air.html)
 - [Installation et prix](https://thermaz.fr/installation-climatisation.html)
 - [Entretien](https://thermaz.fr/entretien-climatisation.html)
 - [Dépannage](https://thermaz.fr/depannage-climatisation.html)
