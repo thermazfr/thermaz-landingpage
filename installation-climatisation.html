@@ -50,30 +50,34 @@
 <p class="offer" data-offer-until="2026-11-15"><b>Offre de lancement</b> 1er entretien offert (159 € par unité intérieure) pour tout devis de pose signé avant le 15 novembre 2026.</p>
 <ul class="facts"><li>Devis sous 24h</li><li>Pose par l'artisan</li><li>Toutes marques, dont Mitsubishi Electric et Daikin</li></ul>
 </div></section>
-<section class="sec" id="prix"><div class="wrap">
-<div class="sec-head"><h2 class="h2">Calculez votre prix en 20 secondes</h2><p class="lead">Prix posé, matériel et main-d'œuvre compris, pour une installation standard.</p></div>
-<div class="calc" id="calc" data-prices='{"ess": {"2.5": 1263, "3.5": 1361, "5": 1659, "bi": 3124}, "pre": {"2.5": 1447, "3.5": 1591, "5": 2006, "bi": 3594}}'>
- <div>
-  <fieldset><legend>Combien de pièces à climatiser ?</legend><div class="seg">
-   <input type="radio" name="rooms" id="r1" value="1" checked><label for="r1">1 pièce</label>
-   <input type="radio" name="rooms" id="r2" value="2"><label for="r2">2 pièces</label>
-   <input type="radio" name="rooms" id="r3" value="3"><label for="r3">3 pièces ou plus</label></div></fieldset>
-  <fieldset id="surfBox"><legend><label for="surf">Surface de la pièce</label></legend>
-   <div class="range"><input type="range" id="surf" min="10" max="60" step="1" value="22"><output id="surfOut" for="surf">22 m²</output></div>
-   <p class="hint" id="kwHint">Puissance conseillée : 2,5 kW</p></fieldset>
-  <fieldset><legend>Gamme</legend><div class="seg">
-   <input type="radio" name="gamme" id="g1" value="ess" checked><label for="g1">Essentielle<small>Atlantic, Thermor, Altech…</small></label>
-   <input type="radio" name="gamme" id="g2" value="pre"><label for="g2">Premium<small>Mitsubishi Electric, Daikin</small></label></div></fieldset>
- </div>
- <div class="ticket" aria-live="polite">
-  <p class="t-what" id="tWhat">Monosplit 2,5 kW, gamme essentielle</p>
-  <p class="t-price" id="tPrice">dès 1 263 €<small> posé</small></p>
-  <p class="t-offer" data-offer-until="2026-11-15">+ 1er entretien offert par unité intérieure, devis signé avant le 15 novembre</p>
-  <p class="t-note">Prix TTC, pose standard comprise. Déplacement gratuit dans un rayon d'environ 15 à 20 km autour de Salon ; au-delà, un léger forfait peut s'ajouter, toujours indiqué dans le devis.</p>
-  <p class="small" id="tDetail" style="margin:12px 0 16px">Unité murale + groupe extérieur, mise en service comprise.</p>
-  <div class="btns"><a class="btn btn-warm" id="tCta" href="devis.html">Réserver ce devis</a><a class="btn btn-line" href="tel:+33651106435">Appeler</a></div>
- </div>
-</div></div></section>
+<section class="sec" id="prix" aria-labelledby="quote-title">
+  <div class="wrap qw-grid">
+    <div class="qw-intro">
+      <h2 class="h2" id="quote-title">Votre prix en 1 minute.</h2>
+      <p class="lead">Quelques questions sur votre projet : votre prix s'affiche dès l'envoi, et je vous rappelle dans la journée pour le confirmer.</p>
+      <ul class="check"><li>Gratuit et sans engagement</li><li>Votre prix affiché dès l'envoi</li><li>Rappel par l'artisan dans la journée</li></ul>
+    </div>
+    <div class="qw" id="devis-rapide" data-qw-src="data/devis-rapide.json" data-flow="installation">
+<div class="qw-tabs" role="tablist"><button type="button" role="tab" data-flow="installation" aria-selected="true">Installation</button><button type="button" role="tab" data-flow="entretien" aria-selected="false">Entretien</button><button type="button" role="tab" data-flow="depannage" aria-selected="false">Dépannage</button></div>
+<div class="qw-card">
+  <div class="qw-recap">
+    <span class="qw-flag">Prix immédiat</span>
+    <button type="button" class="qw-head" aria-expanded="false"><span><small>Votre projet</small><b>Récapitulatif</b></span><span class="qw-est"></span><span class="qw-count">0/5</span><span class="qw-chev" aria-hidden="true"></span></button>
+    <dl class="qw-list" hidden></dl>
+  </div>
+  <div class="qw-body">
+    <div class="qw-prog"><span class="qw-step"></span><span class="qw-name"></span></div>
+    <div class="qw-bar"><i></i></div>
+    <h3 class="qw-title"></h3>
+    <div class="qw-content"></div>
+    <p class="status qw-status" role="status"></p>
+    <div class="qw-nav"><button type="button" class="btn btn-line qw-prev">Retour</button><button type="button" class="btn btn-warm qw-next" disabled>Suivant</button></div>
+  </div>
+</div>
+<p class="qw-or">Plus rapide : appelez le <a href="tel:+33651106435">06 51 10 64 35</a></p>
+</div>
+  </div>
+</section>
 <section class="brand-band" aria-label="Marques installées"><div class="wrap"><p class="brands-title">Les marques que j'installe et que j'entretiens</p></div><div class="marquee mq-brands"><ul class="mq-track"><li>Mitsubishi Electric</li><li>Daikin</li><li>Atlantic</li><li>Thermor</li><li>Bosch</li><li>Panasonic</li><li>Altech</li><li>Toshiba</li></ul><ul class="mq-track" aria-hidden="true"><li>Mitsubishi Electric</li><li>Daikin</li><li>Atlantic</li><li>Thermor</li><li>Bosch</li><li>Panasonic</li><li>Altech</li><li>Toshiba</li></ul></div></section>
 <section class="sec alt" id="tarifs"><div class="wrap">
 <div class="sec-head"><h2 class="h2">Tous les tarifs, sans détour</h2><p class="lead">Prix « à partir de » pour une pose standard. Un supplément éventuel est chiffré dans le devis, avant tout engagement.</p></div>
@@ -131,7 +135,7 @@
     <div class="ftr-bottom"><span>© <span data-year>2026</span> Thermaz</span><a href="mentions-legales.html">Mentions légales</a><a href="mentions-legales.html#cookies">Cookies</a></div>
   </div>
 </footer>
-<div class="callbar"><a class="btn btn-line" href="devis.html#installation">Mon prix</a><a class="btn btn-warm" href="tel:+33651106435">Appeler</a></div>
+<div class="callbar"><a class="btn btn-line" href="#prix">Mon prix</a><a class="btn btn-warm" href="tel:+33651106435">Appeler</a></div>
 <script src="assets/site.js"></script>
 </body>
 </html>
