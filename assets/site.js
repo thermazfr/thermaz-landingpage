@@ -337,8 +337,6 @@ const THERMAZ = {
     $("#w-prev").addEventListener("click", () => show(i - 1));
     $$("input,select", wiz).forEach(el => el.addEventListener("input", recap));
     $$('.opt input[type=radio]', wiz).forEach(el => el.addEventListener("change", () => {
-      // Installation d'un type connu : le client fait son prix lui-même dans le configurateur
-      if (el.name === "type" && el.value !== "conseil") { location.href = "configurateur.html?type=" + encodeURIComponent(el.value); return; }
       if (i < 3) setTimeout(() => { if (valid()) show(i + 1); }, 180);
     }));
     wiz.addEventListener("submit", async e => {
@@ -397,12 +395,20 @@ const THERMAZ = {
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     const lbl = (step, v) => { const o = (step.options || []).find(x => x.v === v); return o ? o.label : v; };
 
+    // Catalogue des modèles : prix de la marque choisie (sinon, prix de la gamme)
+    let CAT = null;
+    fetch("data/catalogue.json").then(r => r.json()).then(d => { CAT = d; }).catch(() => {});
+    function brandMin(units, kw) {
+      if (!CAT || !A.marque || A.marque === "Conseillez-moi") return null;
+      const ok = CAT.filter(m => m.b === A.marque && m.t === "mural" && m.u === units && (!kw || (m.k >= kw * 0.95 && m.k < kw + 1.2)));
+      return ok.length ? Math.min(...ok.map(m => m.p)) : null;
+    }
     function estimate() {
       const P = C.prices;
       if (flow === "installation") {
-        const g = A.gamme === "pre" ? "pre" : "ess", n = +(A.pieces || 0), m2 = +(A.surface || 25);
-        if (A.type === "murale" && n === 1) { const k = m2 <= 25 ? "2.5" : m2 <= 35 ? "3.5" : m2 <= 50 ? "5" : null; return k ? "dès " + euro(P[g][k]) : "Sur devis"; }
-        if ((A.type === "multi" || A.type === "murale") && n === 2) return "dès " + euro(P[g].bi);
+        const g = /Daikin|Mitsubishi/.test(A.marque || "") ? "pre" : "ess", n = +(A.pieces || 0), m2 = +(A.surface || 25);
+        if (A.type === "murale" && n === 1) { const k = m2 <= 25 ? "2.5" : m2 <= 35 ? "3.5" : m2 <= 50 ? "5" : null; return k ? "dès " + euro(brandMin(1, +k) || P[g][k]) : "Sur devis"; }
+        if ((A.type === "multi" || A.type === "murale") && n === 2) return "dès " + euro(brandMin(2) || P[g].bi);
         return A.type ? "Sur devis" : "";
       }
       if (flow === "entretien") {
@@ -450,7 +456,7 @@ const THERMAZ = {
       else if (s.kind === "chips") h = '<div class="qchips">' + s.chips.map(c => '<button type="button" class="qchip' + (A[s.key] === c ? " on" : "") + '" data-v="' + esc(c) + '">' + esc(c) + "</button>").join("") + "</div>";
       else if (s.kind === "rooms") h = '<div class="qchips big">' + ["1", "2", "3", "4"].map(n => '<button type="button" class="qchip' + (A.pieces === n ? " on" : "") + '" data-room="' + n + '">' + n + (n === "4" ? "+" : "") + " pièce" + (n > 1 ? "s" : "") + "</button>").join("") + '</div><div class="field qw-range"><label for="qw-m2">Surface à climatiser (au total)</label><div class="range"><input type="range" id="qw-m2" min="10" max="150" value="' + (A.surface || 25) + '"><output>' + (A.surface || 25) + " m²</output></div></div>";
       else if (s.kind === "place") h = '<div class="qo-track">' + [["maison", "Maison"], ["appartement", "Appartement"], ["pro", "Local pro"]].map(([v, l]) => '<button type="button" class="qo' + (A.bien === v ? " on" : "") + '" data-bien="' + v + '"><span class="qo-ic">' + C.place_icons[v] + "</span><b>" + l + "</b></button>").join("") + '</div><div class="f2 qw-fields"><div class="field"><label for="qw-commune">Commune</label><input id="qw-commune" data-k="commune" autocomplete="address-level2" placeholder="Salon-de-Provence" value="' + esc(A.commune || "") + '"></div><div class="field"><label for="qw-delai">Quand ?</label><select id="qw-delai" data-k="delai">' + ["Dès que possible", "Dans le mois", "Dans les 3 mois", "Je me renseigne"].map(d => "<option" + (A.delai === d ? " selected" : "") + ">" + d + "</option>").join("") + "</select></div></div>";
-      else if (s.kind === "contact") h = '<div class="qw-fields"><div class="f2"><div class="field"><label for="qw-nom">Prénom et nom</label><input id="qw-nom" data-k="nom" autocomplete="name" value="' + esc(A.nom || "") + '"></div><div class="field"><label for="qw-tel">Téléphone</label><input id="qw-tel" data-k="telephone" type="tel" autocomplete="tel" value="' + esc(A.telephone || "") + '"></div></div><div class="field"><label for="qw-mail">E-mail (facultatif)</label><input id="qw-mail" data-k="email" type="email" autocomplete="email" value="' + esc(A.email || "") + '"></div><div class="field"><label for="qw-msg">Précisions (facultatif)</label><textarea id="qw-msg" data-k="message" rows="3" placeholder="Étage, emplacement du groupe extérieur, marque souhaitée…">' + esc(A.message || "") + "</textarea></div></div>";
+      else if (s.kind === "contact") h = '<div class="qw-fields"><div class="f2"><div class="field"><label for="qw-nom">Prénom et nom</label><input id="qw-nom" data-k="nom" autocomplete="name" value="' + esc(A.nom || "") + '"></div><div class="field"><label for="qw-tel">Téléphone</label><input id="qw-tel" data-k="telephone" type="tel" autocomplete="tel" value="' + esc(A.telephone || "") + '"></div></div><div class="field"><label for="qw-mail">E-mail (pour recevoir votre estimation)</label><input id="qw-mail" data-k="email" type="email" autocomplete="email" value="' + esc(A.email || "") + '"></div><div class="field"><label for="qw-msg">Précisions (facultatif)</label><textarea id="qw-msg" data-k="message" rows="3" placeholder="Étage, emplacement du groupe extérieur, marque souhaitée…">' + esc(A.message || "") + "</textarea></div></div>";
       el(".qw-content").innerHTML = h;
       el(".qw-prev").hidden = i === 0;
       const last = i === st.length - 1;
@@ -465,11 +471,7 @@ const THERMAZ = {
       if (b.dataset.room) { A.pieces = b.dataset.room; $$(".qchip", qw).forEach(x => x.classList.toggle("on", x === b)); return refresh(); }
       if (b.dataset.bien) { A.bien = b.dataset.bien; $$(".qo", qw).forEach(x => x.classList.toggle("on", x === b)); return refresh(); }
       if (b.dataset.v !== undefined) {
-        // Installation : on continue dans le configurateur, où le client voit son prix modèle par modèle
-        if (flow === "installation" && s.key === "type") {
-          location.href = "configurateur.html" + (b.dataset.v !== "conseil" ? "?type=" + encodeURIComponent(b.dataset.v) : "");
-          return;
-        }
+        // Le client reste dans le devis : son prix s'affiche une fois ses coordonnées envoyées (page merci)
         A[s.key] = b.dataset.v;
         $$(".qo,.qchip", qw).forEach(x => x.classList.toggle("on", x === b));
         refresh();
