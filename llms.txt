@@ -1,6 +1,6 @@
 # Thermaz
 
-> Thermaz est une entreprise artisanale de climatisation basée à Salon-de-Provence (Bouches-du-Rhône, 13). Elle installe, entretient et dépanne des climatisations réversibles (pompes à chaleur air-air) de toutes marques, et réalise aussi des travaux de plomberie.
+> Thermaz est une entreprise artisanale de climatisation basée à Salon-de-Provence (Bouches-du-Rhône, 13). Elle installe, entretient et dépanne des climatisations réversibles (pompes à chaleur air-air) de toutes marques.
 
 ## Informations clés
 - Zone : Salon-de-Provence, Pélissanne, Lançon-Provence, Grans, La Barben, Cornillon-Confoux, Eyguières, Sénas, Miramas, Istres, Saint-Chamas et alentours ; Aix-en-Provence sur rendez-vous
