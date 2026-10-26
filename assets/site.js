@@ -385,12 +385,18 @@ const THERMAZ = {
     setupPane($(".pd-pane:not([hidden])", box));
   });
 
-  /* ---- Devis rapide de la page d'accueil ---- */
-  const qw = $("[data-qw]");
-  if (qw) {
-    const C = JSON.parse(qw.dataset.qw);
+  /* ---- Devis rapide (accueil, et pages d'arrivée via data/devis-rapide.json) ---- */
+  const qwBox = $("[data-qw],[data-qw-src]");
+  if (qwBox) {
+    if (qwBox.dataset.qw) devisRapide(qwBox, JSON.parse(qwBox.dataset.qw));
+    else fetch(qwBox.dataset.qwSrc || "data/devis-rapide.json").then(r => r.json()).then(C => devisRapide(qwBox, C)).catch(() => {
+      $(".qw-content", qwBox).innerHTML = '<p>Le formulaire n\'a pas pu se charger. Appelez le <a href="tel:+33651106435">06 51 10 64 35</a>.</p>';
+    });
+  }
+  function devisRapide(qw, C) {
     const el = s => $(s, qw);
-    let flow = "installation", i = 0, A = {};
+    let flow = C.flows[qw.dataset.flow] ? qw.dataset.flow : "installation", i = 0, A = {};
+    $$(".qw-tabs button", qw).forEach(x => x.setAttribute("aria-selected", x.dataset.flow === flow));
     const steps = () => C.flows[flow].steps;
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     const lbl = (step, v) => { const o = (step.options || []).find(x => x.v === v); return o ? o.label : v; };
