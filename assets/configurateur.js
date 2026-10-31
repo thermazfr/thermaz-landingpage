@@ -30,7 +30,14 @@
     monobloc: { l: "Monobloc", t: "monobloc" }
   };
 
-  /* ---- Visuels catalogue (dessins neutres, en attendant les photos fabricants) ---- */
+  /* ---- Photos catalogue (assets/clims) : par gamme en mono, par marque et nombre d'unités en multi ---- */
+  const slug = s => s.toLowerCase().replace(/\+/g, "-plus").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  function photo(m) {
+    if (!m || m.t === "monobloc" || (m.b === "Mitsubishi Electric" && /^Design/.test(m.g))) return null;
+    return "assets/clims/" + (m.u > 1 ? "multi-" + m.u + "-" + slug(m.b) : "mono-" + slug(m.b + " " + m.g)) + ".jpg";
+  }
+
+  /* ---- Dessins neutres, pour les modèles sans photo ---- */
   const U = (x, y, w) => {                 // unité murale vue de face
     const h = w * 0.27;
     return '<g transform="translate(' + x + " " + y + ')"><rect width="' + w + '" height="' + h + '" rx="' + h * 0.28 + '" fill="url(#cg)" stroke="#D5DCE3"/>' +
@@ -123,7 +130,12 @@
   function render() {
     const L = resoudre(), m = S.model, t = total();
     // Visuel et en-tête produit
-    $("#c-visual").innerHTML = visuel(S.type, multi() ? S.rooms.length : 1);
+    const src = photo(m), box = $("#c-visual"), clef = src || S.type + (multi() ? S.rooms.length : 1);
+    if (box.dataset.clef !== clef) {       // évite de recharger l'image à chaque clic
+      box.dataset.clef = clef;
+      box.classList.toggle("cf-photo", !!src);
+      box.innerHTML = src ? '<img src="' + src + '" alt="Climatisation ' + esc(m.b + " " + m.g) + '">' : visuel(S.type, multi() ? S.rooms.length : 1);
+    }
     $("#c-badges").innerHTML = '<span class="cf-badge">' + esc(TYPES[S.type].l) + '</span><span class="cf-badge cf-badge-g">' + (S.gamme === "pre" ? "Premium" : "Essentielle") + "</span>";
     $("#c-brand").textContent = m ? m.b : "";
     $("#c-name").textContent = m ? m.g + " · " + kwTxt(m.kw) : "Choisissez votre clim";
