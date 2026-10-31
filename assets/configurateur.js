@@ -26,14 +26,13 @@
     murale: { l: "Murale", t: "mural" },
     multi: { l: "Plusieurs pièces", t: "mural" },
     console: { l: "Console", t: "console" },
-    gainable: { l: "Gainable", t: "gainable" },
-    monobloc: { l: "Monobloc", t: "monobloc" }
+    gainable: { l: "Gainable", t: "gainable" }
   };
 
   /* ---- Photos catalogue (assets/clims) : par gamme en mono, par marque et nombre d'unités en multi ---- */
   const slug = s => s.toLowerCase().replace(/\+/g, "-plus").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   function photo(m) {
-    if (!m || m.t === "monobloc" || (m.b === "Mitsubishi Electric" && /^Design/.test(m.g))) return null;
+    if (!m || (m.b === "Mitsubishi Electric" && /^Design/.test(m.g))) return null;
     return "assets/clims/" + (m.u > 1 ? "multi-" + m.u + "-" + slug(m.b) : "mono-" + slug(m.b + " " + m.g)) + ".jpg";
   }
 
@@ -68,9 +67,6 @@
       [70, 190].map(x => '<g transform="translate(' + x + ' 46)"><rect width="60" height="16" rx="3" fill="url(#cg)" stroke="#D5DCE3"/>' +
         [4, 8, 12].map(y => '<rect x="6" y="' + y + '" width="48" height="1.6" fill="#B9C3CD"/>').join("") + "</g>").join("") +
       '<path d="M100 86 q0 30 0 50 M220 86 q0 30 0 50" stroke="#CFE2FA" stroke-width="10" stroke-linecap="round" fill="none" opacity=".7"/>';
-    if (type === "monobloc") g = '<g transform="translate(40 60)"><rect width="240" height="80" rx="14" fill="url(#cg)" stroke="#D5DCE3"/>' +
-      '<rect x="18" y="56" width="204" height="8" rx="4" fill="#9AA7B4"/><circle cx="216" cy="22" r="3" fill="#2E8BFF"/>' +
-      '<rect x="18" y="18" width="70" height="6" rx="3" fill="#E1E6EB"/></g>';
     return '<svg viewBox="0 0 320 200" role="img" aria-label="Climatisation ' + esc(TYPES[type].l.toLowerCase()) + '">' + DEFS + g + "</svg>";
   }
 
@@ -107,7 +103,7 @@
   }
   function units() { return S.model ? S.model.u : 1; }
   function liaisons() { return S.type === "gainable" ? LIAISON.gainable : LIAISON.std; }
-  function total() { return S.model ? S.model.p + (multi() || S.type === "monobloc" ? 0 : S.liaison) : null; }
+  function total() { return S.model ? S.model.p + (multi() ? 0 : S.liaison) : null; }
 
   // Recalcule la sélection : gamme disponible, modèle, puissance conseillée
   function resoudre() {
@@ -180,9 +176,9 @@
     $("#c-power-hint").textContent = "Conseillée pour " + (multi() ? "votre plus grande pièce (" + Math.max(...S.rooms) + " m²)" : surf + " m²") + ", à environ 100 W par m². Je la vérifie sur place.";
 
     // Liaison
-    if (multi() || S.type === "monobloc") {
+    if (multi()) {
       S.liaison = 0;
-      $("#c-liaison").innerHTML = '<span class="cf-chip cf-static"><span>✓ ' + (multi() ? "Incluses, pose standard" : "Sans liaison : pas de groupe extérieur") + "</span></span>";
+      $("#c-liaison").innerHTML = '<span class="cf-chip cf-static"><span>✓ Incluses, pose standard</span></span>';
     } else {
       if (!liaisons().some(o => o.v === S.liaison)) S.liaison = 0;
       $("#c-liaison").innerHTML = liaisons().map(o => chip("c-liaison", o.v, S.liaison === o.v, o.l, o.s)).join("");
@@ -251,7 +247,7 @@
       type: T.l,
       modele: m.b + " " + m.g + " " + kwTxt(m.kw),
       pieces: multi() || S.type === "gainable" ? S.rooms.map((x, i) => "pièce " + (i + 1) + " : " + x + " m²").join(", ") : S.m2 + " m²",
-      liaison: multi() ? "comprise (pose standard)" : S.type === "monobloc" ? "sans" : (liaisons().find(o => o.v === S.liaison) || {}).l,
+      liaison: multi() ? "comprise (pose standard)" : (liaisons().find(o => o.v === S.liaison) || {}).l,
       contrat_entretien: S.contrat ? "oui, " + CONTRAT * units() + " €/an" : "non",
       offre: ENTRETIEN_OFFERT ? "1er entretien offert si signé avant le 15/11" : "",
       estimation: euro(total()) + " TTC (configurateur)",
