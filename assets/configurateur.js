@@ -32,7 +32,7 @@
   /* ---- Photos catalogue (assets/clims) : par gamme en mono, par marque et nombre d'unités en multi ---- */
   const slug = s => s.toLowerCase().replace(/\+/g, "-plus").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   function photo(m) {
-    if (!m || (m.b === "Mitsubishi Electric" && /^Design/.test(m.g))) return null;
+    if (!m) return null;
     return "assets/clims/" + (m.u > 1 ? "multi-" + m.u + "-" + slug(m.b) : "mono-" + slug(m.b + " " + m.g)) + ".jpg";
   }
 
