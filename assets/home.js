@@ -40,10 +40,10 @@
 
   /* ---- Vidéo du nettoyage : se lance seule quand elle est visible ---- */
   const vid = $(".h-row-video video");
+  if (vid) vid.addEventListener("click", () => vid.play().catch(() => {}));
   if (vid && !reduce && "IntersectionObserver" in window) {
-    vid.removeAttribute("controls");
     new IntersectionObserver(es => es.forEach(e => {
-      if (e.isIntersecting) { vid.preload = "auto"; vid.play().catch(() => vid.setAttribute("controls", "")); }
+      if (e.isIntersecting) { vid.preload = "auto"; vid.play().catch(() => {}); }
       else vid.pause();
     }), { threshold: 0.35 }).observe(vid);
   }
