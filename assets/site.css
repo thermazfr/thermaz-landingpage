@@ -411,6 +411,8 @@ legend{font-weight:700;font-size:15.5px;margin-bottom:10px;padding:0}
 .art-out{width:72%}
 .art-row{display:flex;gap:6px;width:100%;justify-content:center}
 .art-mini{flex:1;max-width:46%}
+.pd-img.pd-photo{padding:0}
+.pd-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:46px 18px 12px;box-sizing:border-box;mix-blend-mode:multiply}
 .pd-body{padding:20px 22px 22px;display:grid;gap:4px;flex:1}
 .pd-brand{font-size:13px;font-weight:700;color:var(--cold)}
 .pd h3{font-size:20px;font-weight:800;font-variation-settings:"wdth" 90}
