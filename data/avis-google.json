@@ -4,7 +4,7 @@
   "rating": 5,
   "count": 18,
   "url": "https://maps.google.com/?cid=2279725555113015761&g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAIYBCAA",
-  "updated": "2026-11-01T11:14:28.940Z",
+  "updated": "2026-11-02T12:19:43.988Z",
   "reviews": [
     {
       "name": "Olivier",
@@ -13,22 +13,28 @@
       "text": "Parfait, intervention soignée et explications suite à mes multiples questions durant tout le processus de nettoyage de la climatisation, je recommande et reviendrai vers vous . Merci"
     },
     {
+      "name": "Martin Brettnacher",
+      "stars": 5,
+      "when": "il y a 3 semaines",
+      "text": "Très satisfait de l’intervention !\nTravail sérieux et soigné, avec de bonnes explications et de précieux conseils.\nProfessionnel, réactif et sympathique, je recommande sans hésiter"
+    },
+    {
+      "name": "Arthur Leroyer",
+      "stars": 5,
+      "when": "il y a 2 semaines",
+      "text": "Très satisfait du service ! Travail sérieux et soigné. Je recommande."
+    },
+    {
+      "name": "matthieu FORGET",
+      "stars": 5,
+      "when": "il y a 2 semaines",
+      "text": "Jeune homme dynamique,  consciencieux et professionnel. Qualité de prestation et forte sympathie. Je recommande en tous points. Merci"
+    },
+    {
       "name": "Jonas Karramkan",
       "stars": 5,
       "when": "il y a 2 semaines",
       "text": "Très professionnel et très aimable, un travail de qualité je recommande très fortement !"
-    },
-    {
-      "name": "Anthony TOMAS",
-      "stars": 5,
-      "when": "il y a 2 semaines",
-      "text": "Merci pour le travail de qualité, une équipe motivée et qui travaille très bien"
-    },
-    {
-      "name": "UgoDako",
-      "stars": 5,
-      "when": "il y a 3 mois",
-      "text": "Installation impeccable.\nBon prix, rien à dire, je recommande !"
     }
   ]
 }
