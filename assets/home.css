@@ -35,8 +35,11 @@ html.lenis,html.lenis body{height:auto}
 .h-hero-in{position:relative;display:grid;gap:40px;align-items:end;padding-top:calc(var(--hdr-h) + 48px);padding-bottom:clamp(92px,12vh,132px);width:100%}
 @media (min-width:980px){.h-hero-in{grid-template-columns:minmax(0,1fr) auto}}
 .h-hero-copy{display:grid;justify-items:start;min-width:0}
-.h-rating{display:inline-flex;align-items:center;gap:10px;font-size:14.5px;font-weight:500;color:#fff;text-decoration:none;margin-bottom:28px;opacity:.92}
-.h-rating:hover{opacity:1;text-decoration:underline}
+.h-rating{display:inline-flex;align-items:center;gap:10px;padding:5px 14px 5px 5px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.24);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;text-decoration:none;margin-bottom:28px;transition:background .2s}
+.h-rating:hover{background:rgba(255,255,255,.2)}
+.h-g{flex:none;width:30px;height:30px;border-radius:50%;background:#fff;display:grid;place-items:center}
+.h-g svg{display:block;width:17px;height:17px}
+.h-rating b{font-size:18px;font-weight:750;line-height:1;font-variant-numeric:tabular-nums}
 .h-stars svg{display:block;width:84px;height:16px;fill:#F5B301}
 .h-hero h1{font-size:clamp(42px,7vw,96px);font-weight:750;font-variation-settings:"wdth" 86;letter-spacing:-.04em;line-height:.98;max-width:13ch}
 .h-hero-lead{font-size:clamp(18px,1.6vw,21px);line-height:1.5;color:rgba(255,255,255,.84);max-width:46ch;margin:24px 0 32px}

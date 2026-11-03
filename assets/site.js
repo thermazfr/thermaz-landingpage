@@ -34,6 +34,19 @@ const THERMAZ = {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const euro = n => n.toLocaleString("fr-FR").replace(/[  ]/g, " ") + " €";
+  // Zone de déplacement (entretien) d'une commune saisie : « salon », « Aix » ou « Lançon-Provence »
+  const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+  function zoneOf(E, commune) {
+    const n = norm(commune), zs = (E && E.zones) || [];
+    if (n.length < 3) return null;
+    const hit = f => zs.filter(z => z.communes.some(c => f(norm(c))));
+    const exact = hit(c => c === n);
+    if (exact.length) return exact[0];
+    const pre = hit(c => c.startsWith(n));
+    return pre.length === 1 ? pre[0] : null;
+  }
+  const entPrice = (E, contrat, n) => (contrat ? E.contrat : E.nettoyage) + (Math.max(1, n) - 1) * (E.extra || 0);
+  const zoneFee = (z, contrat) => contrat && z.fee_contrat !== undefined ? z.fee_contrat : z.fee;
   const store = {
     get(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { sessionStorage.setItem(k, v); } catch {} }
@@ -88,11 +101,24 @@ const THERMAZ = {
   })();
 
   /* ---- Menu mobile + menus déroulants ---- */
-  const hdr = $(".hdr");
-  $(".burger")?.addEventListener("click", e => {
-    const open = hdr.classList.toggle("menu-open");
-    e.currentTarget.setAttribute("aria-expanded", open);
-  });
+  const hdr = $(".hdr"), burger = $(".burger"), nav = $(".nav");
+  const menu = open => {
+    hdr.classList.toggle("menu-open", open);
+    document.documentElement.classList.toggle("menu-lock", open);
+    burger.setAttribute("aria-expanded", open);
+    burger.setAttribute("aria-label", open ? "Fermer le menu" : "Ouvrir le menu");
+  };
+  if (burger && nav) {
+    // Bas du menu mobile : appel et devis, repris des boutons de l'en-tête
+    const cta = document.createElement("div"), tel = $(".hdr-tel"), dv = $(".hdr-cta .btn");
+    cta.className = "nav-cta";
+    if (tel) { const a = tel.cloneNode(true); a.className = "btn btn-line"; a.textContent = "Appeler le " + tel.textContent.trim(); cta.appendChild(a); }
+    if (dv) { const a = dv.cloneNode(true); a.classList.remove("btn-sm"); cta.appendChild(a); }
+    nav.appendChild(cta);
+    burger.addEventListener("click", () => menu(!hdr.classList.contains("menu-open")));
+    nav.addEventListener("click", e => { if (e.target.closest("a")) menu(false); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && hdr.classList.contains("menu-open")) { menu(false); burger.focus(); } });
+  }
   $$(".dd>button").forEach(b => b.addEventListener("click", e => {
     e.stopPropagation();
     const dd = b.parentElement, was = dd.classList.contains("open");
@@ -123,6 +149,9 @@ const THERMAZ = {
   function showRating(rating, count) {
     $$("[data-rating]").forEach(el => {
       if (!rating) { el.textContent = "Avis Google"; return; }
+      const short = rating.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      // Badge du haut de l'accueil : la note seule, à côté du logo Google et des étoiles
+      if (el.dataset.rating === "note") { el.textContent = short; el.closest("a").setAttribute("aria-label", "Note Google : " + short + " sur 5, voir les avis"); return; }
       const note = rating.toLocaleString("fr-FR", { minimumFractionDigits: 1 }) + "/5";
       el.textContent = count >= MIN_AVIS_AFFICHES ? note + " · " + count + " avis Google" : note + " sur Google";
     });
@@ -418,9 +447,12 @@ const THERMAZ = {
         return A.type ? "Sur devis" : "";
       }
       if (flow === "entretien") {
-        if (A.formule === "contrat") return euro(C.ent.contrat) + "/an";
-        if (A.formule === "ponctuel") { const n = +(A.unites || 1); return n > 1 ? "dès " + euro(C.ent.nettoyage) + " / unité" : euro(C.ent.nettoyage); }
-        return "";
+        if (A.formule !== "contrat" && A.formule !== "ponctuel") return "";
+        // Première clim, puis un prix par clim en plus ; déplacement selon la zone, une fois par visite
+        const contrat = A.formule === "contrat", n = +(A.unites || 1), unit = contrat ? "/an" : "";
+        const prix = entPrice(C.ent, contrat, n), z = zoneOf(C.ent, A.commune), fee = z ? zoneFee(z, contrat) : null;
+        const dep = fee === null ? (A.commune ? " + déplacement à confirmer" : "") : fee ? " + " + euro(fee) + " de déplacement" : ", déplacement offert";
+        return (A.unites === "4" ? "dès " : "") + (fee ? euro(prix + fee) + unit + " (" + euro(prix) + unit + dep + ")" : euro(prix) + unit + dep);
       }
       return A.panne ? "Diagnostic sur devis" : "";
     }
@@ -516,6 +548,74 @@ const THERMAZ = {
     render();
   }
 
+  /* ---- Carte des zones de déplacement (page entretien) ---- */
+  const zm = $("[data-zones]");
+  if (zm) {
+    Promise.all([fetch("data/devis-rapide.json").then(r => r.json()), fetch("assets/zones-entretien.svg").then(r => r.text())]).then(([C, svg]) => {
+      const E = C.ent, map = $(".zm-map", zm), q = $("#zm-q", zm), list = $("#zm-list", zm), out = $(".zm-out", zm);
+      const plus = (base, fee, unit) => fee ? euro(base) + " + " + euro(fee) + " = <b>" + euro(base + fee) + unit + "</b>" : "<b>" + euro(base) + unit + "</b>";
+      map.innerHTML = svg;
+      // Recherche de commune : suggestions filtrées à la frappe, clavier compris
+      const all = E.zones.flatMap(z => z.communes.map(c => ({ c, z }))).sort((a, b) => a.c.localeCompare(b.c, "fr"));
+      let cur = "", act = -1;
+      const opts = () => $$('[role="option"]', list);
+      function mark() { opts().forEach((o, i) => o.setAttribute("aria-selected", i === act)); const o = opts()[act]; q.setAttribute("aria-activedescendant", o ? o.id : ""); if (o) o.scrollIntoView({ block: "nearest" }); }
+      function suggest() {
+        const t = norm(q.value), hits = all.filter(o => !t || norm(o.c).includes(t));
+        list.innerHTML = hits.length
+          ? hits.map((o, i) => '<li role="option" id="zm-o' + i + '" data-c="' + o.c + '"><span>' + o.c + "</span><small>" + (o.z.fee ? "déplacement " + euro(o.z.fee) : "déplacement offert") + "</small></li>").join("")
+          : '<li role="option" id="zm-o0" data-c="autre"><span>Commune hors zone</span><small>prix par téléphone</small></li>';
+        act = t ? 0 : -1; list.hidden = false; q.setAttribute("aria-expanded", "true"); mark();
+      }
+      function close() { list.hidden = true; q.setAttribute("aria-expanded", "false"); q.setAttribute("aria-activedescendant", ""); }
+      function pick(c) { close(); show(c); }
+      q.addEventListener("focus", suggest);
+      q.addEventListener("input", suggest);
+      q.addEventListener("blur", () => setTimeout(close, 150));
+      q.addEventListener("keydown", e => {
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (list.hidden) suggest(); act = Math.max(0, Math.min(opts().length - 1, act + (e.key === "ArrowDown" ? 1 : -1))); mark(); }
+        else if (e.key === "Enter" && !list.hidden && opts()[act]) { e.preventDefault(); pick(opts()[act].dataset.c); }
+        else if (e.key === "Escape") close();
+      });
+      list.addEventListener("pointerdown", e => { const o = e.target.closest('[role="option"]'); if (o) { e.preventDefault(); pick(o.dataset.c); } });
+      // Au survol : prix de la commune dans une bulle (souris uniquement, au doigt c'est le clic)
+      const tip = document.createElement("div");
+      tip.className = "zm-tip"; tip.hidden = true; map.appendChild(tip);
+      const zoneOfC = c => E.zones.find(x => x.communes.includes(c));
+      let n = 1;
+      const clims = () => n + " clim" + (n > 1 ? "s" : "");
+      const tipText = c => { const z = zoneOfC(c); return "<b>" + c + "</b><span>" + (z.fee ? "Déplacement " + euro(z.fee) : "Déplacement offert") + "</span><span>" + clims() + " : nettoyage " + euro(entPrice(E, false, n) + z.fee) + " · contrat " + euro(entPrice(E, true, n) + zoneFee(z, true)) + "/an</span>"; };
+      $$(".zm-c", map).forEach(p => { const z = zoneOfC(p.dataset.commune); p.setAttribute("aria-label", p.dataset.commune + ", " + (z.fee ? "déplacement " + euro(z.fee) : "déplacement offert")); });
+      map.addEventListener("pointermove", e => {
+        const p = e.pointerType === "mouse" && e.target.closest(".zm-c");
+        if (!p) { tip.hidden = true; return; }
+        if (tip.dataset.c !== p.dataset.commune) { tip.dataset.c = p.dataset.commune; tip.innerHTML = tipText(p.dataset.commune); }
+        const r = map.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+        tip.hidden = false;
+        tip.style.left = Math.min(x + 14, r.width - tip.offsetWidth - 4) + "px";
+        tip.style.top = (y - tip.offsetHeight - 12 < 0 ? y + 18 : y - tip.offsetHeight - 12) + "px";
+      });
+      map.addEventListener("pointerleave", () => { tip.hidden = true; });
+      function show(c) {
+        cur = c;
+        if (c !== "autre") q.value = c;
+        $$(".zm-c", map).forEach(p => p.classList.toggle("on", p.dataset.commune === c));
+        out.hidden = !c;
+        if (!c) return;
+        if (c === "autre") { out.innerHTML = '<p class="zm-zone">Hors des zones affichées</p><p class="hint">J\'interviens aussi un peu plus loin : appelez le <a href="tel:+33651106435">06 51 10 64 35</a> et je vous donne le prix du déplacement.</p>'; return; }
+        const z = zoneOfC(c), fc = zoneFee(z, true);
+        out.innerHTML = '<p class="zm-zone">' + c + " · " + z.km + " de Salon</p>" +
+          '<dl class="zm-rows"><div><dt>Nettoyage complet, ' + clims() + "</dt><dd>" + plus(entPrice(E, false, n), z.fee, "") + "</dd></div>" +
+          "<div><dt>Contrat annuel, " + clims() + "</dt><dd>" + plus(entPrice(E, true, n), fc, "/an") + "</dd></div></dl>" +
+          '<p class="hint">' + (z.fee ? "Déplacement compté une fois par visite, même pour plusieurs clims" + (fc ? "." : ", et offert avec le contrat.") : "Déplacement offert dans cette zone.") + " " + euro(E.extra) + " par clim en plus au-delà de 4.</p>" +
+          '<a class="btn btn-warm" href="#devis">Demander cet entretien</a>';
+      }
+      $$('input[name="zm-n"]', zm).forEach(r => r.addEventListener("change", () => { n = +r.value; tip.dataset.c = ""; if (cur) show(cur); }));
+      map.addEventListener("click", e => { const p = e.target.closest(".zm-c"); if (p) show(p.dataset.commune); });
+      map.addEventListener("keydown", e => { const p = e.target.closest(".zm-c"); if (p && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); show(p.dataset.commune); } });
+    }).catch(() => { $(".zm-map", zm).innerHTML = '<p class="hint">La carte n\'a pas pu se charger. Appelez le <a href="tel:+33651106435">06 51 10 64 35</a> pour le prix du déplacement.</p>'; });
+  }
+
   /* ---- Page de remerciement personnalisée ---- */
   const thanks = $("[data-thanks]");
   if (thanks) {
@@ -527,7 +627,9 @@ const THERMAZ = {
       if (L.estimation && /€/.test(L.estimation)) {
         const p = document.createElement("p");
         p.className = "lead";
-        p.innerHTML = "Votre estimation : <b></b>, pour une pose standard. Le prix définitif dépend notamment de la distance entre les deux unités (longueur des liaisons) : je vous le confirme après une visite ou quelques photos.";
+        p.innerHTML = L.prestation === "Entretien"
+          ? "Votre prix : <b></b>. Je vous rappelle pour fixer la date de l'entretien."
+          : "Votre estimation : <b></b>, pour une pose standard. Le prix définitif dépend notamment de la distance entre les deux unités (longueur des liaisons) : je vous le confirme après une visite ou quelques photos.";
         $("b", p).textContent = L.estimation;
         const lead = $(".lead", thanks);
         lead ? lead.after(p) : thanks.firstElementChild.appendChild(p);
