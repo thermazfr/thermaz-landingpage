@@ -4,14 +4,8 @@
   "rating": 5,
   "count": 18,
   "url": "https://maps.google.com/?cid=2279725555113015761&g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAIYBCAA",
-  "updated": "2026-11-02T12:19:43.988Z",
+  "updated": "2026-11-04T12:04:20.991Z",
   "reviews": [
-    {
-      "name": "Olivier",
-      "stars": 5,
-      "when": "il y a 3 mois",
-      "text": "Parfait, intervention soignée et explications suite à mes multiples questions durant tout le processus de nettoyage de la climatisation, je recommande et reviendrai vers vous . Merci"
-    },
     {
       "name": "Martin Brettnacher",
       "stars": 5,
@@ -29,6 +23,12 @@
       "stars": 5,
       "when": "il y a 2 semaines",
       "text": "Jeune homme dynamique,  consciencieux et professionnel. Qualité de prestation et forte sympathie. Je recommande en tous points. Merci"
+    },
+    {
+      "name": "Paul Michel",
+      "stars": 5,
+      "when": "il y a 2 semaines",
+      "text": "Une prestation professionnelle, ils m’ont conseillé et aidé.\nJe recommande à 1000%"
     },
     {
       "name": "Jonas Karramkan",
