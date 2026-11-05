@@ -163,10 +163,11 @@
   async function openApp() { show("v-app"); $("#demo").hidden = !DEMO; await refresh(true); }
   async function refresh(silent) {
     const b = $("#b-refresh"); b.classList.add("spin");
-    const [t, d] = await Promise.all([api("today"), api("demandes")]);
+    const [t, d, tr] = await Promise.all([api("today"), api("demandes"), api("traces", { jours: 1 })]);
     b.classList.remove("spin");
     if (!t.ok || !d.ok) { if (t.error !== "auth" && d.error !== "auth") toast(err(t.ok ? d : t)); return; }
     state.today = t; state.data = d.rows; state.statuts = d.statuts || FLOW.concat(SIDE);
+    if (tr && tr.ok) state.traces = tr.rows;
     render();
     api("depenses").then(x => { if (x && x.ok) { state.depenses = x.rows; if (state.view === "argent") render(); } });
     if (!silent) toast("À jour");
@@ -251,10 +252,11 @@
   function faitAvecSuite(r) {
     const quoi = r.action || (r.statut === "Nouveau" || !r.statut ? "premier appel" : "tâche");
     const st = !r.statut || r.statut === "Nouveau" ? { statut: "Rappelé" } : {};
+    const tr = suite => tracer("Fait", (r.nom || "?") + " · " + quoi + " · " + suite, r.row);
     choisir("C'est fait. Et ensuite ?", r.nom + " · " + quoi, [
-      { t: "Relancer dans 3 jours", s: "Revient le " + dansJours(3), fn: () => majFiche(r, { ...st, action: "Relancer le " + dansJours(3), noteAjout: "Fait : " + quoi }, "Noté, relance le " + dansJours(3)) },
-      { t: "Relancer dans 1 semaine", s: "Revient le " + dansJours(7), fn: () => majFiche(r, { ...st, action: "Relancer le " + dansJours(7), noteAjout: "Fait : " + quoi }, "Noté, relance le " + dansJours(7)) },
-      { t: "Plus rien à faire", s: "La prochaine action est effacée", fn: () => majFiche(r, { ...st, action: "", noteAjout: "Fait : " + quoi }, "Noté dans le CRM") },
+      { t: "Relancer dans 3 jours", s: "Revient le " + dansJours(3), fn: () => { tr("relance le " + dansJours(3)); majFiche(r, { ...st, action: "Relancer le " + dansJours(3), noteAjout: "Fait : " + quoi }, "Noté, relance le " + dansJours(3)); } },
+      { t: "Relancer dans 1 semaine", s: "Revient le " + dansJours(7), fn: () => { tr("relance le " + dansJours(7)); majFiche(r, { ...st, action: "Relancer le " + dansJours(7), noteAjout: "Fait : " + quoi }, "Noté, relance le " + dansJours(7)); } },
+      { t: "Plus rien à faire", s: "La prochaine action est effacée", fn: () => { tr("terminé"); majFiche(r, { ...st, action: "", noteAjout: "Fait : " + quoi }, "Noté dans le CRM"); } },
       { t: "Juste cocher", s: "Sans rien changer dans le CRM (sur cet appareil)", fn: () => basculerFait(r) }
     ]);
   }
@@ -266,7 +268,7 @@
   }
   function relancer(r) {
     const t = tel(r.tel), txt = texteRelance(r), suite = dansJours(4);
-    const noter = canal => majFiche(r, { action: "Rappeler le " + suite + " (relance envoyée le " + dansJours(0) + ")", noteAjout: "Relance envoyée par " + canal }, "Relance notée, rappel le " + suite);
+    const noter = canal => (tracer("Relance envoyée", (r.nom || "?") + " · par " + canal, r.row), majFiche(r, { action: "Rappeler le " + suite + " (relance envoyée le " + dansJours(0) + ")", noteAjout: "Relance envoyée par " + canal }, "Relance notée, rappel le " + suite));
     const opts = [];
     if (t) opts.push({ t: "WhatsApp", s: "Message prêt, tu n'as qu'à l'envoyer", fn: () => { window.open("https://wa.me/" + t.replace("+", "") + "?text=" + encodeURIComponent(txt), "_blank", "noopener"); noter("WhatsApp"); } });
     if (r.email) opts.push({ t: "E-mail", s: "Mail prêt dans ton appli mail", fn: () => { location.href = "mailto:" + r.email + "?subject=" + encodeURIComponent("Votre devis climatisation – Thermaz") + "&body=" + encodeURIComponent(txt); noter("e-mail"); } });
@@ -285,14 +287,50 @@
     for (const k of Object.keys(f)) if (!(f[k] > lim)) delete f[k];
     return f;
   }
-  const estFait = r => !!faits()[faitCle(r)];
+  const estFait = r => { const e = etatTrace(faitCle(r)); return e === null ? !!faits()[faitCle(r)] : e; };
   function basculerFait(r) {
-    const f = faits(), k = faitCle(r);
-    if (f[k]) delete f[k]; else f[k] = Date.now();
+    const f = faits(), k = faitCle(r), etait = !!f[k];
+    if (etait) delete f[k]; else f[k] = Date.now();
     try { localStorage.setItem(FK, JSON.stringify(f)); } catch (e) {}
+    tracer(etait ? "Remis à faire" : "Fait", (r.nom || "?") + " · " + (r.action || "premier appel"), r.row, k);
     render();
   }
   const resteAFaire = () => aFaire().filter(r => !estFait(r));
+  /* ----- Journal de ce qui a été fait (onglet « Journal » du CRM, visible sur tous les appareils) ----- */
+  const aujFr = () => new Date().toLocaleDateString("fr-FR");
+  function tracer(type, quoi, ligne, cle) {
+    const now = new Date();
+    (state.traces = state.traces || []).push({ date: aujFr(), heure: pad(now.getHours()) + ":" + pad(now.getMinutes()), source: "Admin", type, quoi, ligne: ligne || "", cle: cle || "" });
+    api("trace", { type, quoi, ligne, cle }).then(r => { if (r && !r.ok && r.error !== "auth") toast("Trace non enregistrée : " + err(r)); });
+  }
+  // Dernier état connu d'un élément d'après le journal : true (fait), false (remis), null (rien).
+  function etatTrace(cle) {
+    let e = null;
+    for (const t of state.traces || []) if (t.cle === cle && t.date === aujFr()) e = !/remis/i.test(t.type);
+    return e;
+  }
+
+  // Rendez-vous cochés « Fait » : ils descendent en bas, grisés. Gardé dans le journal (et sur l'appareil).
+  const rdvCle = ev => "rdv|" + ev.titre + "|" + ev.debut;
+  const rdvFait = ev => { const e = etatTrace(rdvCle(ev)); return (e === null ? !!faits()[rdvCle(ev)] : e) ? 1 : 0; };
+  function basculerRdv(ev) {
+    const f = faits(), k = rdvCle(ev), etait = !!rdvFait(ev);
+    if (etait) delete f[k]; else f[k] = Date.now();
+    try { localStorage.setItem(FK, JSON.stringify(f)); } catch (e) {}
+    tracer(etait ? "RDV remis à faire" : "RDV fait", ev.titre, "", k);
+    render();
+  }
+  function carteRdv(ev) {
+    const fait = !!rdvFait(ev);
+    return el("article", { class: "ad-item" + (fait ? " fait" : "") },
+      el("div", { class: "ad-item-main" },
+        el("span", { class: "ad-item-top" }, el("b", { text: ev.titre })),
+        el("small", { text: ev.journee ? "Toute la journée" : new Date(ev.debut).toLocaleString("fr-FR", { weekday: "long", hour: "2-digit", minute: "2-digit" }) }),
+        ev.lieu ? el("small", { text: ev.lieu }) : null),
+      el("div", { class: "ad-item-acts" },
+        el("button", { type: "button", class: "ad-fait", "aria-pressed": fait ? "true" : "false", onclick: () => basculerRdv(ev) }, icon(fait ? "refresh" : "check", 16), fait ? "Remettre" : "Fait"),
+        ev.lieu ? el("a", { href: "https://waze.com/ul?navigate=yes&q=" + encodeURIComponent(ev.lieu), target: "_blank", rel: "noopener noreferrer" }, icon("map", 16), "Waze") : null));
+  }
   function carteTache(r) {
     const fait = estFait(r), c = carte(r), froid = joursSansNouvelles(r), acts = c.querySelector(".ad-item-acts");
     if (fait) c.classList.add("fait");
@@ -315,17 +353,25 @@
         el("button", { class: "ad-tile", type: "button", onclick: () => go("demandes") }, el("b", { text: c.demandesNb }), el("span", { text: "demandes au total" })),
         el("button", { class: "ad-tile", type: "button", onclick: () => go("clients") }, el("b", { text: clients().length }), el("span", { text: "clients" }))),
       el("h2", { class: "ad-h2", text: "Rendez-vous aujourd'hui et demain" }),
-      t.rdv.length ? el("div", { class: "ad-list" }, t.rdv.map(ev => el("article", { class: "ad-item" }, el("div", { class: "ad-item-main" },
-        el("span", { class: "ad-item-top" }, el("b", { text: ev.titre })),
-        el("small", { text: ev.journee ? "Toute la journée" : new Date(ev.debut).toLocaleString("fr-FR", { weekday: "long", hour: "2-digit", minute: "2-digit" }) }),
-        ev.lieu ? el("small", { text: ev.lieu }) : null),
-        ev.lieu ? el("div", { class: "ad-item-acts" }, el("a", { href: "https://waze.com/ul?navigate=yes&q=" + encodeURIComponent(ev.lieu), target: "_blank", rel: "noopener noreferrer" }, icon("map", 16), "Waze")) : null)))
+      t.rdv.length ? el("div", { class: "ad-list" }, [...t.rdv].sort((a, b) => rdvFait(a) - rdvFait(b)).map(carteRdv))
         : el("p", { class: "ad-empty", text: "Aucun rendez-vous dans l'agenda." }),
       el("h2", { class: "ad-h2" }, "À faire maintenant", todo.length ? el("b", { text: todo.length }) : null),
       todo.length ? el("div", { class: "ad-list" }, todo.map(carteTache))
         : el("p", { class: "ad-empty", text: finis.length ? "Tout est fait pour aujourd'hui. Bravo." : "Personne à rappeler et aucune relance pour aujourd'hui. Profite." }),
       finis.length ? el("h2", { class: "ad-h2 ad-h2--fait" }, "Fait", el("b", { text: finis.length })) : null,
-      finis.length ? el("div", { class: "ad-list" }, finis.map(carteTache)) : null].filter(Boolean));
+      finis.length ? el("div", { class: "ad-list" }, finis.map(carteTache)) : null,
+      journalDuJour()].filter(Boolean));
+  }
+  // « Fait aujourd'hui » : tout ce qui a été noté dans le journal aujourd'hui, ici et par le bot Telegram.
+  function journalDuJour() {
+    const l = (state.traces || []).filter(x => x.date === aujFr()).slice().reverse();
+    const box = el("details", { class: "ad-group ad-journal", open: new Date().getHours() >= 17 || null },
+      el("summary", {}, el("span", { class: "ad-h2" }, "Fait aujourd'hui", el("b", { text: l.length }))));
+    box.append(l.length ? el("div", { class: "ad-panel" }, l.map(x => el("div", { class: "ad-row" },
+        el("span", {}, el("b", { text: x.type }), " · " + x.quoi + (x.source === "Telegram" ? " (bot)" : "")),
+        el("b", { text: x.heure }))))
+      : el("p", { class: "ad-empty", text: "Rien de noté pour l'instant. Chaque « Fait », paiement, relance ou ajout du bot s'affichera ici." }));
+    return box;
   }
 
   /* ----- Demandes ----- */
@@ -405,6 +451,7 @@
     if (!Object.keys(f).length) { $("#fiche").close(); return; }
     const res = await api("update", { row: r.row, nom: r.nom, fields: f });
     if (!res.ok) return msg("m-fiche", err(res));
+    tracer("Fiche modifiée", (r.nom || "?") + (f.statut ? " → " + f.statut : "") + (f.noteAjout ? " · " + f.noteAjout.slice(0, 80) : ""), r.row);
     $("#fiche").close(); toast("Enregistré dans le CRM");
     await refresh(true);
   }));
@@ -427,6 +474,7 @@
       const src = SOURCES[pick.source] || ["", ""];
       const res = await api("add", { fields: { nom: $("#nv-nom").value.trim(), tel: $("#nv-tel").value.trim(), commune: $("#nv-commune").value.trim(), prestation: pick.presta, details: $("#nv-details").value.trim(), source: src[0], connu: src[1] } });
       if (!res.ok) return msg("m-new", err(res));
+      tracer("Client ajouté", $("#nv-nom").value.trim() + ($("#nv-commune").value.trim() ? " (" + $("#nv-commune").value.trim() + ")" : ""), res.row);
       $("#nouveau").close(); toast("Demande créée dans le CRM");
       await refresh(true);
       const n = state.data.find(x => x.row === res.row); if (n) openFiche(n);
@@ -461,6 +509,7 @@
     if (m === null) return;
     const f = { noteAjout: "Acompte reçu : " + euro(m) + " (avant : " + r.statut + ")" };
     if (r.statut === "Signé") f.statut = "Acompte reçu";
+    tracer("Acompte reçu", (r.nom || "?") + " · " + euro(m), r.row);
     busy(null, () => majFiche(r, f, "Acompte de " + euro(m) + " noté"));
   }
   function validerPaiement(r) {
@@ -469,6 +518,7 @@
     if (m === null) return;
     const f = { statut: "Soldé", noteAjout: "Paiement validé : " + euro(m) + " encaissés (avant : " + r.statut + ")" };
     if (!r.montantNum) f.montant = String(m);
+    tracer("Paiement reçu", (r.nom || "?") + " · " + euro(m), r.row);
     busy(null, () => majFiche(r, f, euro(m) + " encaissés"));
   }
   function annulerPaiement(r) {
@@ -476,6 +526,7 @@
     const avant = m && A_ENCAISSER.includes(m[1]) ? m[1] : "Signé";
     if (!confirm("Remettre " + (r.nom || "ce client") + " en attente de paiement (« " + avant + " ») ?")) return;
     busy(null, async () => {
+      tracer("Paiement annulé", (r.nom || "?") + " · remis en " + avant, r.row);
       const res = await api("update", { row: r.row, nom: r.nom, fields: { statut: avant, noteAjout: "Paiement annulé, remis en « " + avant + " »" } });
       if (!res.ok) return toast(err(res));
       toast("Remis en attente de paiement");
@@ -640,6 +691,8 @@
         D.journal.unshift({ t: new Date().toISOString(), msg: "Modifié ligne " + r.row + " (" + r.nom + ")" });
         return { ok: true };
       }
+      case "trace": return { ok: true };
+      case "traces": return { ok: true, rows: (state.traces || []).slice() };
       case "depenses": return { ok: true, rows: [
         { date: new Date(Date.now() - 3 * 864e5).toLocaleDateString("fr-FR"), montant: 412.5, fournisseur: "Grossiste clim (démo)", categorie: "Matériel", chantier: "Client Démo A", ligne: 2, description: "Liaisons frigo", lien: "" },
         { date: new Date(Date.now() - 864e5).toLocaleDateString("fr-FR"), montant: 68, fournisseur: "Station (démo)", categorie: "Carburant", chantier: "", ligne: "", description: "", lien: "" }] };

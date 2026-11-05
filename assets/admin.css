@@ -97,6 +97,10 @@ textarea{resize:vertical}
 .ad-item.fait .ad-item-top b{text-decoration:line-through;text-decoration-color:var(--muted)}
 .ad-item.fait .ad-item-acts>*:not(.ad-fait){opacity:.6}
 .ad-h2--fait{margin-top:10px}
+.ad-journal{margin-top:12px}
+.ad-journal .ad-row span{color:var(--fg)}
+.ad-journal .ad-row span b{font-weight:700}
+.ad-journal .ad-row>b{color:var(--muted);font-weight:600;white-space:nowrap}
 .ad-h2--fait .ad-muted{text-transform:none;letter-spacing:0;font-weight:600;margin-left:4px}
 .ad-stack{display:grid;gap:12px;margin-bottom:8px}
 .ad-choix{display:grid;gap:8px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}
