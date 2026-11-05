@@ -90,6 +90,23 @@ textarea{resize:vertical}
 .ad-item-acts{display:flex;border-top:1px solid var(--line)}
 .ad-item-acts>*{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;background:none;border:0;border-right:1px solid var(--line);color:var(--cold);font-weight:650;font-size:14px;text-decoration:none;cursor:pointer}
 .ad-item-acts>*:last-child{border-right:0}
+.ad-item-acts .ad-fait{color:var(--ok)}
+.ad-item-acts .ad-fait[aria-pressed="true"]{background:var(--ok-soft)}
+.ad-item.fait{background:color-mix(in srgb,var(--surface) 55%,var(--bg));border-style:dashed}
+.ad-item.fait .ad-item-main{opacity:.55}
+.ad-item.fait .ad-item-top b{text-decoration:line-through;text-decoration-color:var(--muted)}
+.ad-item.fait .ad-item-acts>*:not(.ad-fait){opacity:.6}
+.ad-h2--fait{margin-top:10px}
+.ad-h2--fait .ad-muted{text-transform:none;letter-spacing:0;font-weight:600;margin-left:4px}
+.ad-stack{display:grid;gap:12px;margin-bottom:8px}
+.ad-choix{display:grid;gap:8px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}
+.ad-choix .ad-btn{justify-content:flex-start;text-align:left;width:100%;border-radius:var(--r-sm);min-height:52px;padding:8px 16px;display:grid;gap:1px}
+.ad-choix .ad-btn small{font-weight:400;color:var(--muted);font-size:13px}
+.ad-choix .ad-btn--main{background:var(--cold);border-color:var(--cold);color:#fff}
+.ad-choix .ad-btn--main small{color:rgba(255,255,255,.8)}
+.ad-item .ad-froid{color:var(--warn);font-weight:600;font-size:14px}
+.ad-item .ad-reste{color:var(--ok);font-weight:600;font-size:14px}
+.ad-tile--ok{border-color:color-mix(in srgb,var(--ok) 40%,var(--line));background:var(--ok-soft)}
 .ad-empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:16px;color:var(--muted);font-size:14.5px}
 .ad-badge{font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap;background:var(--cold-soft);color:var(--cold)}
 .ad-badge[data-s="Nouveau"],.ad-badge[data-s=""]{background:var(--warm-soft);color:var(--warm)}
