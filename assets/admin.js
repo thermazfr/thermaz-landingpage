@@ -419,7 +419,8 @@
       quick(!!t, { href: "https://wa.me/" + t.replace("+", ""), target: "_blank", rel: "noopener noreferrer" }, "chat", "WhatsApp"),
       quick(!!r.email, { href: "mailto:" + r.email }, "mail", "E-mail"),
       quick(!!r.commune, { href: "https://waze.com/ul?navigate=yes&q=" + encodeURIComponent(adresseDe(r)), target: "_blank", rel: "noopener noreferrer" }, "map", "Waze"),
-      quick(true, { href: "#", onclick: e => { e.preventDefault(); $("#fiche").close(); ouvrirDevis(r); } }, "euro", "Devis"));
+      quick(true, { href: "#", onclick: e => { e.preventDefault(); $("#fiche").close(); ouvrirDevis(r); } }, "euro", "Devis"),
+      quick(GAGNES.includes(r.statut), { href: "#", onclick: e => { e.preventDefault(); $("#fiche").close(); facturer(r); } }, "list", "Facture"));
     drawSteps();
     $("#fi-action").value = r.action || "";
     $("#fi-dates").replaceChildren(...[["Aujourd'hui", 0], ["Demain", 1], ["Dans 3 jours", 3], ["Dans 1 semaine", 7], ["Effacer", null]].map(([t2, n]) => el("button", { type: "button", text: t2, onclick: () => setDate(n) })));
@@ -527,7 +528,11 @@
     const f = { statut: "Soldé", noteAjout: "Paiement validé : " + euro(m) + " encaissés (avant : " + r.statut + ")" };
     if (!r.montantNum) f.montant = String(m);
     tracer("Paiement reçu", (r.nom || "?") + " · " + euro(m), r.row);
-    busy(null, () => majFiche(r, f, euro(m) + " encaissés"));
+    busy(null, async () => {
+      await majFiche(r, f, euro(m) + " encaissés");
+      const maj = (state.data || []).find(x => x.row === r.row) || r;
+      if (maj.statut === "Soldé") facturer(maj);
+    });
   }
   function annulerPaiement(r) {
     const m = String(r.notes || "").match(/\(avant : ([^)]+)\)(?![\s\S]*\(avant : )/);
@@ -635,6 +640,7 @@
     if (!CAT.length) return toast("Catalogue du site introuvable.");
     Object.assign(dv, { row: r ? r.row : null, civilite: "", marque: "Daikin", gamme: "", gamme2: "aucune", systemes: [], liaisons: 0, pompe: 0, depose: 0, hauteur: 0, autreL: "", autreM: 0, copro: false, remarques: "", fait: null });
     dv.systemes = [{ u: 1, kw: kwDefaut(1) }];
+    $("#dv-titre").textContent = "Préparer le devis";
     rendreDevis();
     $("#devis").showModal();
   }
@@ -717,6 +723,33 @@
       t ? el("a", { class: "ad-btn ad-btn--main", href: "sms:" + t + "?&body=" + encodeURIComponent(f.sms) }, icon("chat", 16), "Envoyer le SMS au client") : null,
       el("button", { type: "button", class: "ad-btn", text: "Fermer", onclick: () => $("#devis").close() })
     ].filter(Boolean));
+  }
+
+  /* ----- Facture (fin de chantier) ----- */
+  function facturer(r) {
+    if (!r) return;
+    const civ = dv.row === r.row ? dv.civilite : "";
+    choisir("Faire la facture de " + (r.nom || "ce client") + " ?", "D'après le dernier devis, acomptes déduits. Le mail part en brouillon.", [
+      { t: "Préparer la facture", s: "PDF + brouillon Gmail + livre des recettes", fn: () => busy(null, async () => {
+        toast("Préparation de la facture…");
+        const res = await api("facture", { row: r.row, nom: r.nom, civilite: civ });
+        if (!res.ok) return toast(err(res));
+        const box = $("#dv-body");
+        $("#dv-titre").textContent = "Facture";
+        box.replaceChildren(...[
+          el("div", { class: "ad-done" },
+            el("b", { text: "Facture " + res.numero + " prête" }),
+            el("p", { text: "Total " + euro(res.total) + (res.reste > 0 ? " · reste à payer " + euro(res.reste) : " · acquittée") }),
+            el("p", { class: "ad-muted", text: res.brouillon ? "Le mail est en brouillon dans Gmail, facture jointe. Relis-le et envoie-le." : "Pas d'e-mail sur la fiche : la facture est dans Drive." })),
+          res.pdf && /^https:\/\/(drive|docs)\.google\.com\//.test(res.pdf) ? el("a", { class: "ad-btn", href: res.pdf, target: "_blank", rel: "noopener noreferrer" }, "Voir la facture") : null,
+          res.brouillon ? el("a", { class: "ad-btn ad-btn--main", href: "https://mail.google.com/mail/?authuser=thermaz.fr@gmail.com#drafts", target: "_blank", rel: "noopener noreferrer" }, icon("mail", 16), "Ouvrir les brouillons Gmail") : null,
+          el("button", { type: "button", class: "ad-btn", text: "Fermer", onclick: () => { $("#devis").close(); $("#dv-titre").textContent = "Préparer le devis"; } })
+        ].filter(Boolean));
+        $("#devis").showModal();
+        refresh(true);
+      }) },
+      { t: "Plus tard", s: "Bouton « Facture » dans la fiche du client", fn: () => {} }
+    ]);
   }
 
   /* ----- Dépenses (envoyées en photo au bot Telegram) ----- */
@@ -837,6 +870,7 @@
         return { ok: true };
       }
       case "trace": return { ok: true };
+      case "facture": return { ok: true, numero: "F-2026-DEMO", total: 130, reste: 0, pdf: "", brouillon: true };
       case "devis": return { ok: true, numero: "D-2026-DEMO", brouillon: true, pdf: "", tel: "06 00 00 00 01", sms: "Bonjour, c'est Andy de Thermaz. Je viens de vous envoyer le devis par mail (démo).", options: [{ marque: data.marque, gamme: data.gamme, total: 5209 }].concat(data.gamme2 ? [{ marque: data.marque, gamme: data.gamme2, total: 6252 }] : []) };
       case "traces": return { ok: true, rows: (state.traces || []).slice() };
       case "depenses": return { ok: true, rows: [
