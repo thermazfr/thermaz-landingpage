@@ -147,7 +147,19 @@ textarea{resize:vertical}
 .ad-sheet-in{display:grid;gap:16px;padding:18px 16px 0}
 .ad-sheet-in header{display:flex;align-items:center;gap:8px}
 .ad-sheet-in h2{flex:1;font-size:22px;letter-spacing:-.01em}
-.ad-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ad-quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(58px,1fr));gap:8px}
+.ad-devis{display:grid;gap:14px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}
+.ad-devis label{display:grid;gap:5px;font-size:13.5px;font-weight:650;color:var(--muted)}
+.ad-devis .ad-sys{display:grid;grid-template-columns:1fr 1.3fr auto;gap:8px;align-items:end}
+.ad-devis .ad-sys button{min-height:44px;border:1px solid var(--line);background:var(--field);border-radius:var(--r-sm);padding:0 12px;cursor:pointer;color:var(--warm);font-weight:700}
+.ad-devis .ad-ligne2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ad-devis .ad-check{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--fg)}
+.ad-devis .ad-check input{width:22px;height:22px}
+.ad-devis .ad-totaux{display:grid;gap:6px}
+.ad-devis .ad-total{display:flex;justify-content:space-between;gap:10px;background:var(--cold-soft);border-radius:var(--r-sm);padding:10px 12px;font-weight:700}
+.ad-devis .ad-total.err{background:var(--warn-soft);color:var(--warn);font-weight:600}
+.ad-devis .ad-done{display:grid;gap:10px;text-align:center}
+.ad-devis .ad-done b{font-size:18px}
 .ad-quick>*{display:grid;justify-items:center;gap:4px;padding:10px 4px;border-radius:14px;background:var(--cold-soft);color:var(--cold);font-size:12.5px;font-weight:700;text-decoration:none}
 .ad-quick>.off{opacity:.35;pointer-events:none}
 .ad-block{display:grid;gap:8px}

@@ -319,6 +319,13 @@
     try { localStorage.setItem(FK, JSON.stringify(f)); } catch (e) {}
     tracer(etait ? "RDV remis à faire" : "RDV fait", ev.titre, "", k);
     render();
+    if (!etait && /visite/i.test(ev.titre || "")) {
+      const r = ficheDuRdv(ev);
+      choisir("Visite faite. On prépare le devis ?", (r ? r.nom + " · " : "") + ev.titre, [
+        { t: "Préparer le devis", s: "Prix du site + 2-3 questions, puis brouillon Gmail et SMS", fn: () => ouvrirDevis(r) },
+        { t: "Plus tard", s: "Bouton « Devis » dans la fiche du client", fn: () => {} }
+      ]);
+    }
   }
   function carteRdv(ev) {
     const fait = !!rdvFait(ev);
@@ -411,7 +418,8 @@
       quick(!!t, { href: "tel:" + t }, "phone", "Appeler"),
       quick(!!t, { href: "https://wa.me/" + t.replace("+", ""), target: "_blank", rel: "noopener noreferrer" }, "chat", "WhatsApp"),
       quick(!!r.email, { href: "mailto:" + r.email }, "mail", "E-mail"),
-      quick(!!r.commune, { href: "https://waze.com/ul?navigate=yes&q=" + encodeURIComponent(adresseDe(r)), target: "_blank", rel: "noopener noreferrer" }, "map", "Waze"));
+      quick(!!r.commune, { href: "https://waze.com/ul?navigate=yes&q=" + encodeURIComponent(adresseDe(r)), target: "_blank", rel: "noopener noreferrer" }, "map", "Waze"),
+      quick(true, { href: "#", onclick: e => { e.preventDefault(); $("#fiche").close(); ouvrirDevis(r); } }, "euro", "Devis"));
     drawSteps();
     $("#fi-action").value = r.action || "";
     $("#fi-dates").replaceChildren(...[["Aujourd'hui", 0], ["Demain", 1], ["Dans 3 jours", 3], ["Dans 1 semaine", 7], ["Effacer", null]].map(([t2, n]) => el("button", { type: "button", text: t2, onclick: () => setDate(n) })));
@@ -574,6 +582,143 @@
   }
   $("#c-q").addEventListener("input", e => { state.cq = e.target.value; renderClients(); });
 
+  /* ----- Devis après la visite : prix de la grille du site + questions de la visite ----- */
+  let CAT = null;
+  async function chargerCatalogue() {
+    if (CAT && CAT.length) return CAT;
+    try { CAT = await (await fetch("/data/catalogue.json", { cache: "no-store" })).json(); } catch (e) { CAT = []; }
+    return CAT;
+  }
+  const TYPES = [[1, "Mono-split"], [2, "Bi-split"], [3, "Tri-split"], [4, "Quadri-split"]];
+  const SUP_UNITE = 200; // liaisons de 5 à 10 m, pompe de relevage : par unité
+  const dv = {};
+  const sommeKw = s => (String(s).match(/\d+(,\d+)?/g) || []).reduce((t, x) => t + Number(x.replace(",", ".")), 0);
+  const kwPossibles = (marque, u) => [...new Set(CAT.filter(c => c.b === marque && Number(c.u) === u).map(c => String(c.kw)))].sort((a, b) => sommeKw(a) - sommeKw(b));
+  const prixSys = (marque, gamme, s) => { const c = CAT.find(c => c.b === marque && c.g === gamme && Number(c.u) === s.u && String(c.kw) === s.kw); return c ? Number(c.p) : null; };
+  function gammesPossibles(marque) {
+    const g = [...new Set(CAT.filter(c => c.b === marque).map(c => c.g))];
+    const ok = g.filter(x => dv.systemes.every(s => s.kw && prixSys(marque, x, s) !== null));
+    const tot = x => dv.systemes.reduce((t, s) => t + (prixSys(marque, x, s) || 0), 0);
+    return ok.sort((a, b) => tot(a) - tot(b));
+  }
+  function supplementsDevis() {
+    const l = [];
+    if (dv.liaisons > 0) l.push({ libelle: "Liaisons de 5 à 10 m (" + dv.liaisons + (dv.liaisons > 1 ? " unités)" : " unité)"), montant: dv.liaisons * SUP_UNITE });
+    if (dv.pompe > 0) l.push({ libelle: "Pompe de relevage des condensats" + (dv.pompe > 1 ? " (× " + dv.pompe + ")" : ""), montant: dv.pompe * SUP_UNITE });
+    if (dv.depose > 0) l.push({ libelle: "Dépose de l'ancienne climatisation", montant: dv.depose });
+    if (dv.hauteur > 0) l.push({ libelle: "Travail en hauteur / nacelle", montant: dv.hauteur });
+    if (dv.autreL.trim() && dv.autreM > 0) l.push({ libelle: dv.autreL.trim(), montant: dv.autreM });
+    return l;
+  }
+  function totalOption(gamme) {
+    if (!gamme) return null;
+    let t = 0;
+    for (const s of dv.systemes) { const p = prixSys(dv.marque, gamme, s); if (p === null) return { err: "Pas de prix sur le site pour " + dv.marque + " " + gamme + " " + s.kw }; t += p; }
+    return { t: t + supplementsDevis().reduce((x, y) => x + y.montant, 0) };
+  }
+  function kwDefaut(u) { const l = kwPossibles(dv.marque, u); return l.find(k => (u === 1 ? k === "3,5" : u === 2 ? k === "2 kW + 2 kW" : false)) || l[0] || ""; }
+  function majGammes() {
+    const g = gammesPossibles(dv.marque);
+    if (!g.includes(dv.gamme)) dv.gamme = g[0] || "";
+    if (dv.gamme2 !== "aucune" && (!g.includes(dv.gamme2) || dv.gamme2 === dv.gamme)) dv.gamme2 = g.find(x => x !== dv.gamme) || "aucune";
+    return g;
+  }
+  function clientDevis() { return (state.data || []).find(r => r.row === dv.row); }
+  // Retrouve la fiche du client d'après le titre du rendez-vous (« Visite clim – Bérard (Salon) »).
+  function ficheDuRdv(ev) {
+    const t = norm(ev.titre);
+    const l = (state.data || []).filter(r => !SIDE.includes(r.statut) && r.statut !== "Soldé" && r.nom && norm(r.nom).split(/\s+/).some(m => m.length > 2 && t.includes(m)));
+    return l.length ? l[l.length - 1] : null;
+  }
+  async function ouvrirDevis(r) {
+    await chargerCatalogue();
+    if (!CAT.length) return toast("Catalogue du site introuvable.");
+    Object.assign(dv, { row: r ? r.row : null, civilite: "", marque: "Daikin", gamme: "", gamme2: "aucune", systemes: [], liaisons: 0, pompe: 0, depose: 0, hauteur: 0, autreL: "", autreM: 0, copro: false, remarques: "", fait: null });
+    dv.systemes = [{ u: 1, kw: kwDefaut(1) }];
+    rendreDevis();
+    $("#devis").showModal();
+  }
+  const nombre = v => Math.max(0, Number(String(v).replace(",", ".")) || 0);
+  function rendreDevis() {
+    const box = $("#dv-body");
+    if (dv.fait) return rendreDevisFait(box);
+    const gammes = majGammes();
+    const sel = (vals, cur, onch, aria) => { const s = el("select", { "aria-label": aria, onchange: e => onch(e.target.value) }); for (const [v, t] of vals) { const o = el("option", { value: v, text: t }); if (String(v) === String(cur)) o.selected = true; s.append(o); } return s; };
+    const champ = (lab, val, onin, attrs) => el("label", {}, lab, el("input", { value: val || "", inputmode: "decimal", ...(attrs || {}), oninput: e => { onin(e.target.value); majTotaux(); } }));
+    const clients = (state.data || []).filter(r => !SIDE.includes(r.statut) && r.statut !== "Soldé").slice().reverse();
+    box.replaceChildren(...[
+      el("label", {}, "Client", sel([["", "Choisir…"], ...clients.map(r => [r.row, r.nom + (r.commune ? " · " + r.commune : "")])], dv.row || "", v => { dv.row = Number(v) || null; rendreDevis(); }, "Client")),
+      el("div", { class: "ad-chips" }, ...["Monsieur", "Madame"].map(c => el("button", { type: "button", "aria-pressed": String(dv.civilite === c), text: c, onclick: () => { dv.civilite = dv.civilite === c ? "" : c; rendreDevis(); } }))),
+      el("label", {}, "Marque", sel([...new Set(CAT.map(c => c.b))].map(b => [b, b]), dv.marque, v => { dv.marque = v; dv.systemes = dv.systemes.map(s => ({ u: s.u, kw: kwPossibles(v, s.u).includes(s.kw) ? s.kw : kwDefaut(s.u) })); rendreDevis(); }, "Marque")),
+      el("h3", { class: "ad-h2", text: "Systèmes à poser" }),
+      ...dv.systemes.map((s, i) => el("div", { class: "ad-sys" },
+        el("label", {}, "Type", sel(TYPES, s.u, v => { s.u = Number(v); s.kw = kwDefaut(s.u); rendreDevis(); }, "Type")),
+        el("label", {}, "Puissance", sel(kwPossibles(dv.marque, s.u).map(k => [k, k.includes("kW") ? k : k + " kW"]), s.kw, v => { s.kw = v; rendreDevis(); }, "Puissance")),
+        el("button", { type: "button", "aria-label": "Retirer", text: "×", onclick: () => { if (dv.systemes.length > 1) { dv.systemes.splice(i, 1); rendreDevis(); } } }))),
+      el("button", { type: "button", class: "ad-btn", onclick: () => { dv.systemes.push({ u: 1, kw: kwDefaut(1) }); rendreDevis(); } }, icon("plus", 16), "Ajouter un système"),
+      gammes.length ? el("div", { class: "ad-ligne2" },
+        el("label", {}, "Option 1", sel(gammes.map(g => [g, g]), dv.gamme, v => { dv.gamme = v; rendreDevis(); }, "Option 1")),
+        el("label", {}, "Option 2 (si trop cher)", sel([["aucune", "Aucune"], ...gammes.filter(g => g !== dv.gamme).map(g => [g, g])], dv.gamme2, v => { dv.gamme2 = v; rendreDevis(); }, "Option 2")))
+        : el("p", { class: "ad-total err", text: "Aucune gamme " + dv.marque + " n'a de prix sur le site pour cette combinaison." }),
+      el("h3", { class: "ad-h2", text: "Questions de la visite" }),
+      el("div", { class: "ad-ligne2" },
+        champ("Liaisons de 5 à 10 m : nb d'unités (+200 € chacune)", dv.liaisons || "", v => dv.liaisons = nombre(v)),
+        champ("Pompes de relevage (+200 € chacune)", dv.pompe || "", v => dv.pompe = nombre(v))),
+      el("div", { class: "ad-ligne2" },
+        champ("Dépose ancienne clim (€)", dv.depose || "", v => dv.depose = nombre(v)),
+        champ("Hauteur / nacelle (€)", dv.hauteur || "", v => dv.hauteur = nombre(v))),
+      el("div", { class: "ad-ligne2" },
+        champ("Autre supplément", dv.autreL, v => dv.autreL = v, { inputmode: "text" }),
+        champ("Montant (€)", dv.autreM || "", v => dv.autreM = nombre(v))),
+      el("label", { class: "ad-check" }, el("input", { type: "checkbox", checked: dv.copro || null, onchange: e => { dv.copro = e.target.checked; } }), "Copropriété (accord du syndic à demander)"),
+      el("label", {}, "Remarque pour le client (facultatif)", el("textarea", { rows: "2", oninput: e => { dv.remarques = e.target.value; } }, dv.remarques)),
+      el("div", { class: "ad-totaux", id: "dv-tot" }),
+      el("p", { class: "ad-msg", id: "m-devis" }),
+      el("button", { type: "button", class: "ad-btn ad-btn--main", id: "dv-go", onclick: e => envoyerDevis(e.currentTarget) }, "Préparer le devis")
+    ]);
+    majTotaux();
+  }
+  function majTotaux() {
+    const t = $("#dv-tot"); if (!t) return;
+    const lignes = [];
+    for (const [i, g] of [[1, dv.gamme], [2, dv.gamme2 === "aucune" ? "" : dv.gamme2]]) {
+      const r = totalOption(g); if (!r) continue;
+      lignes.push(r.err ? el("div", { class: "ad-total err", text: r.err }) : el("div", { class: "ad-total" }, el("span", { text: "Option " + i + " · " + dv.marque + " " + g }), el("span", { text: euro(r.t) })));
+    }
+    const sup = supplementsDevis();
+    if (sup.length) lignes.push(el("p", { class: "ad-muted", text: "Suppléments compris : " + sup.map(s => s.libelle + " " + euro(s.montant)).join(" · ") }));
+    t.replaceChildren(...lignes);
+  }
+  async function envoyerDevis(btn) {
+    const r = clientDevis();
+    if (!r) return msg("m-devis", "Choisis le client.");
+    if (!dv.gamme) return msg("m-devis", "Il manque une gamme avec un prix sur le site.");
+    busy(btn, async () => {
+      msg("m-devis", "Préparation du devis…", true);
+      const res = await api("devis", {
+        row: r.row, nom: r.nom, civilite: dv.civilite, marque: dv.marque, gamme: dv.gamme, gamme2: dv.gamme2 === "aucune" ? "" : dv.gamme2,
+        systemes: dv.systemes.map(s => ({ u: s.u, kw: s.kw })), supplements: supplementsDevis(), remarques: dv.remarques.trim(), copro: dv.copro
+      });
+      if (!res.ok) return msg("m-devis", err(res));
+      dv.fait = { ...res, nom: r.nom };
+      rendreDevis();
+      refresh(true);
+    });
+  }
+  function rendreDevisFait(box) {
+    const f = dv.fait, t = tel(f.tel);
+    box.replaceChildren(...[
+      el("div", { class: "ad-done" },
+        el("b", { text: "Devis " + f.numero + " prêt" }),
+        el("p", { text: f.options.map(o => o.marque + " " + o.gamme + " : " + euro(o.total)).join(" · ") }),
+        el("p", { class: "ad-muted", text: f.brouillon ? "Le mail est en brouillon dans Gmail, PDF joint. Relis-le et envoie-le : la fiche passera seule en « Devis envoyé »." : "Pas d'e-mail sur la fiche : le PDF est dans Drive, envoie-le par le moyen de ton choix." })),
+      f.pdf && /^https:\/\/(drive|docs)\.google\.com\//.test(f.pdf) ? el("a", { class: "ad-btn", href: f.pdf, target: "_blank", rel: "noopener noreferrer" }, "Voir le PDF") : null,
+      f.brouillon ? el("a", { class: "ad-btn", href: "https://mail.google.com/mail/?authuser=thermaz.fr@gmail.com#drafts", target: "_blank", rel: "noopener noreferrer" }, icon("mail", 16), "Ouvrir les brouillons Gmail") : null,
+      t ? el("a", { class: "ad-btn ad-btn--main", href: "sms:" + t + "?&body=" + encodeURIComponent(f.sms) }, icon("chat", 16), "Envoyer le SMS au client") : null,
+      el("button", { type: "button", class: "ad-btn", text: "Fermer", onclick: () => $("#devis").close() })
+    ].filter(Boolean));
+  }
+
   /* ----- Dépenses (envoyées en photo au bot Telegram) ----- */
   function depensesPanel() {
     const p = el("div", { class: "ad-panel" }, el("h3", { text: "Dépenses" }));
@@ -692,6 +837,7 @@
         return { ok: true };
       }
       case "trace": return { ok: true };
+      case "devis": return { ok: true, numero: "D-2026-DEMO", brouillon: true, pdf: "", tel: "06 00 00 00 01", sms: "Bonjour, c'est Andy de Thermaz. Je viens de vous envoyer le devis par mail (démo).", options: [{ marque: data.marque, gamme: data.gamme, total: 5209 }].concat(data.gamme2 ? [{ marque: data.marque, gamme: data.gamme2, total: 6252 }] : []) };
       case "traces": return { ok: true, rows: (state.traces || []).slice() };
       case "depenses": return { ok: true, rows: [
         { date: new Date(Date.now() - 3 * 864e5).toLocaleDateString("fr-FR"), montant: 412.5, fournisseur: "Grossiste clim (démo)", categorie: "Matériel", chantier: "Client Démo A", ligne: 2, description: "Liaisons frigo", lien: "" },
