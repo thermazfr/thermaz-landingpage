@@ -417,7 +417,7 @@
     $("#fi-actions").replaceChildren(
       quick(!!t, { href: "tel:" + t }, "phone", "Appeler"),
       quick(!!t, { href: "https://wa.me/" + t.replace("+", ""), target: "_blank", rel: "noopener noreferrer" }, "chat", "WhatsApp"),
-      quick(!!r.email, { href: "mailto:" + r.email }, "mail", "E-mail"),
+      quick(!!r.email, { href: "#", onclick: e => { e.preventDefault(); $("#fiche").close(); ouvrirMails(r); } }, "mail", "Mails"),
       quick(!!r.commune, { href: "https://waze.com/ul?navigate=yes&q=" + encodeURIComponent(adresseDe(r)), target: "_blank", rel: "noopener noreferrer" }, "map", "Waze"),
       quick(true, { href: "#", onclick: e => { e.preventDefault(); $("#fiche").close(); ouvrirDevis(r); } }, "euro", "Devis"),
       quick(GAGNES.includes(r.statut), { href: "#", onclick: e => { e.preventDefault(); $("#fiche").close(); facturer(r); } }, "list", "Facture"));
@@ -727,6 +727,52 @@
     ].filter(Boolean));
   }
 
+  /* ----- Mails du client : lire et répondre sans ouvrir Gmail ----- */
+  async function ouvrirMails(r) {
+    const box = $("#dv-body");
+    $("#dv-titre").textContent = "Mails · " + (r.nom || "");
+    box.replaceChildren(el("p", { class: "ad-muted", text: "Chargement des mails…" }));
+    $("#devis").showModal();
+    const res = await api("mailsClient", { row: r.row });
+    if (!res.ok) return box.replaceChildren(el("p", { class: "ad-msg", text: err(res) }));
+    const prenom = String(r.nom || "").split(/\s+/)[0];
+    let fil = (res.fils || []).find(f => f.deClient) || null;
+    const zone = el("textarea", { class: "ad-input", rows: "9", "aria-label": "Ta réponse" });
+    zone.value = "Bonjour " + prenom + ",\n\n\n\nBien cordialement,\n\nAndy\nThermaz\n06 51 10 64 35";
+    const statut = el("p", { class: "ad-msg", role: "status" });
+    const cible = el("p", { class: "ad-muted" });
+    const majCible = () => { cible.textContent = fil ? "Réponse dans la conversation « " + fil.objet + " »" : "Nouveau mail à " + res.email; };
+    const envoyer = (vraiment, btn) => busy(btn, async () => {
+      const texte = zone.value.trim();
+      if (texte.length < 10) { statut.textContent = "Écris ta réponse d'abord."; return; }
+      if (vraiment && !confirm("Envoyer ce mail à " + res.email + " maintenant ?")) return;
+      statut.textContent = vraiment ? "Envoi…" : "Création du brouillon…";
+      const out = await api("repondreClient", { row: r.row, nom: r.nom, texte, thread: fil ? fil.id : "", envoyer: vraiment });
+      if (!out.ok) { statut.textContent = err(out); return; }
+      tracer(vraiment ? "Mail envoyé" : "Brouillon mail", r.nom || "?", r.row);
+      statut.textContent = vraiment ? "Mail envoyé." : "Brouillon prêt dans Gmail.";
+      if (vraiment) zone.value = "";
+    });
+    const liste = (res.fils || []).map(f => {
+      const item = el("button", { type: "button", class: "ad-mail" + (f === fil ? " on" : ""), onclick: () => { fil = f; $$(".ad-mail", box).forEach(b => b.classList.remove("on")); item.classList.add("on"); majCible(); } },
+        el("span", { class: "ad-mail-h" }, el("b", { text: f.objet || "(sans objet)" }), el("small", { text: f.date + (f.deClient ? " · du client" : " · de toi") + (f.nb > 1 ? " · " + f.nb + " messages" : "") })),
+        el("span", { class: "ad-mail-x", text: f.extrait }));
+      return item;
+    });
+    majCible();
+    box.replaceChildren(...[
+      res.email ? null : el("p", { class: "ad-msg", text: "Pas d'e-mail sur cette fiche." }),
+      liste.length ? el("p", { class: "ad-muted", text: "Touche un mail pour y répondre. Sinon, un nouveau mail part à " + res.email + "." }) : el("p", { class: "ad-muted", text: "Aucun échange trouvé avec " + res.email + "." }),
+      ...liste,
+      cible, zone,
+      el("div", { class: "ad-row2" },
+        el("button", { type: "button", class: "ad-btn", text: "Brouillon", onclick: e => envoyer(false, e.currentTarget) }),
+        el("button", { type: "button", class: "ad-btn ad-btn--main", text: "Envoyer", onclick: e => envoyer(true, e.currentTarget) })),
+      statut,
+      el("button", { type: "button", class: "ad-btn", text: "Fermer", onclick: () => $("#devis").close() })
+    ].filter(Boolean));
+  }
+
   /* ----- Facture (fin de chantier) ----- */
   function facturer(r) {
     if (!r) return;
@@ -875,6 +921,10 @@
       case "facture": return { ok: true, numero: "F-2026-DEMO", total: 130, reste: 0, pdf: "", brouillon: true };
       case "devis": return { ok: true, numero: "D-2026-DEMO", brouillon: true, pdf: "", tel: "06 00 00 00 01", sms: "Bonjour, c'est Andy de Thermaz. Je viens de vous envoyer le devis par mail (démo).", options: [{ marque: data.marque, gamme: data.gamme, total: 5209 }].concat(data.gamme2 ? [{ marque: data.marque, gamme: data.gamme2, total: 6252 }] : []) };
       case "traces": return { ok: true, rows: (state.traces || []).slice() };
+      case "mailsClient": return { ok: true, email: "client@exemple.fr", fils: [
+        { id: "t1", objet: "Re: Votre devis climatisation n° D-2026-004 – Thermaz", nb: 3, date: "07/11 18:42", deClient: true, extrait: "Bonjour Andy, merci pour le devis. Est-ce qu'on peut mettre l'unité extérieure côté jardin plutôt que sur la façade ? Bonne soirée." },
+        { id: "t2", objet: "Votre demande – Thermaz", nb: 1, date: "03/11 09:15", deClient: false, extrait: "Bonjour, merci pour votre demande, je l'ai bien reçue…" }] };
+      case "repondreClient": return { ok: true, envoye: !!data.envoyer };
       case "depenses": return { ok: true, rows: [
         { date: new Date(Date.now() - 3 * 864e5).toLocaleDateString("fr-FR"), montant: 412.5, fournisseur: "Grossiste clim (démo)", categorie: "Matériel", chantier: "Client Démo A", ligne: 2, description: "Liaisons frigo", lien: "" },
         { date: new Date(Date.now() - 864e5).toLocaleDateString("fr-FR"), montant: 68, fournisseur: "Station (démo)", categorie: "Carburant", chantier: "", ligne: "", description: "", lien: "" }] };

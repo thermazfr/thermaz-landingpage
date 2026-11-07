@@ -608,7 +608,7 @@ const THERMAZ = {
           '<dl class="zm-rows"><div><dt>Nettoyage complet, ' + clims() + "</dt><dd>" + plus(entPrice(E, false, n), z.fee, "") + "</dd></div>" +
           "<div><dt>Contrat annuel, " + clims() + "</dt><dd>" + plus(entPrice(E, true, n), fc, "/an") + "</dd></div></dl>" +
           '<p class="hint">' + (z.fee ? "Déplacement compté une fois par visite, même pour plusieurs clims" + (fc ? "." : ", et offert avec le contrat.") : "Déplacement offert dans cette zone.") + " " + euro(E.extra) + " par clim en plus au-delà de 4.</p>" +
-          '<a class="btn btn-warm" href="#devis">Demander cet entretien</a>';
+          '<div class="btns"><a class="btn btn-warm" href="reserver.html?c=' + encodeURIComponent(c) + '&amp;n=' + Math.min(4, n) + '">Réserver un créneau</a><a class="btn btn-line" href="#devis">Poser une question</a></div>';
       }
       $$('input[name="zm-n"]', zm).forEach(r => r.addEventListener("change", () => { n = +r.value; tip.dataset.c = ""; if (cur) show(cur); }));
       map.addEventListener("click", e => { const p = e.target.closest(".zm-c"); if (p) show(p.dataset.commune); });

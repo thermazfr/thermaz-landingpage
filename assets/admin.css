@@ -182,3 +182,12 @@ textarea{resize:vertical}
 
 /* Toast */
 .ad-toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+
+/* Mails du client (07/11) */
+.ad-devis .ad-mail{display:grid;gap:4px;text-align:left;width:100%;border:1px solid var(--line);background:var(--field);border-radius:var(--r-sm);padding:10px 12px;cursor:pointer;font:inherit;color:var(--fg)}
+.ad-devis .ad-mail.on{border-color:var(--cold);box-shadow:0 0 0 2px var(--cold)}
+.ad-devis .ad-mail-h{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.ad-devis .ad-mail-h small{color:var(--muted);font-size:12px}
+.ad-devis .ad-mail-x{font-size:13px;color:var(--muted);white-space:pre-wrap;max-height:5.6em;overflow:hidden}
+.ad-devis textarea.ad-input{width:100%;font:inherit;font-size:15px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--field);color:var(--fg);padding:10px 12px;resize:vertical}
+.ad-devis .ad-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}

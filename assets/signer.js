@@ -17,11 +17,11 @@
       else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
       else n.setAttribute(k, v === true ? "" : v);
     }
-    for (const c of kids.flat()) if (c !== null && c !== undefined && c !== false) n.append(c);
+    for (const c of kids.flat(Infinity)) if (c !== null && c !== undefined && c !== false) n.append(c);
     return n;
   }
   const euro = n => Number(n).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
-  const show = (...nodes) => app.replaceChildren(...nodes.flat().filter(Boolean));
+  const show = (...nodes) => app.replaceChildren(...nodes.flat(Infinity).filter(Boolean));
   const msg = (titre, texte) => show(el("h1", { class: "sg-h1", text: titre }), el("p", { class: "sg-msg", text: texte }));
 
   async function api(action, data) {
