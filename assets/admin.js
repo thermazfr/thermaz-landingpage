@@ -92,7 +92,7 @@
     { t: "En cours", f: s => s === "Rappelé" || s === "Visite prévue", open: true },
     { t: "Devis envoyés", f: s => s === "Devis envoyé", open: true },
     { t: "Gagnés", f: s => GAGNES.includes(s), open: false },
-    { t: "Perdus et hors cible", f: s => SIDE.includes(s), open: false }
+    { t: "Perdus", f: s => s === "Perdu", open: false }
   ];
 
   const pad = n => String(n).padStart(2, "0");
@@ -166,7 +166,9 @@
     const [t, d, tr] = await Promise.all([api("today"), api("demandes"), api("traces", { jours: 1 })]);
     b.classList.remove("spin");
     if (!t.ok || !d.ok) { if (t.error !== "auth" && d.error !== "auth") toast(err(t.ok ? d : t)); return; }
-    state.today = t; state.data = d.rows; state.statuts = d.statuts || FLOW.concat(SIDE);
+    // Les demandes « Hors cible » (appels poubelle, mises en service refusées…) restent dans le Google Sheet
+    // pour mesurer la pub, mais n'encombrent pas l'espace admin (choix d'Andy, 07/11).
+    state.today = t; state.data = (d.rows || []).filter(r => r.statut !== "Hors cible"); state.statuts = d.statuts || FLOW.concat(SIDE);
     if (tr && tr.ok) state.traces = tr.rows;
     render();
     api("depenses").then(x => { if (x && x.ok) { state.depenses = x.rows; if (state.view === "argent") render(); } });
