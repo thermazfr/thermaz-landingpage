@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <title>Espace admin | Thermaz</title>
@@ -118,6 +118,13 @@
     <header><h2 id="ch-titre"></h2><button class="ad-icon" type="button" data-close aria-label="Fermer"><svg width="20" height="20"><use href="#i-close"/></svg></button></header>
     <p class="ad-muted" id="ch-sous"></p>
     <div class="ad-choix" id="ch-liste"></div>
+  </div>
+</dialog>
+
+<dialog class="ad-sheet" id="devis" aria-labelledby="dv-titre">
+  <div class="ad-sheet-in">
+    <header><h2 id="dv-titre">Préparer le devis</h2><button class="ad-icon" type="button" data-close aria-label="Fermer"><svg width="20" height="20"><use href="#i-close"/></svg></button></header>
+    <div id="dv-body" class="ad-devis"></div>
   </div>
 </dialog>
 
