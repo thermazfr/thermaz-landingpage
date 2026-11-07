@@ -1,0 +1,54 @@
+/* Page publique de signature du devis (signer.html). S'appuie sur les couleurs de site.css. */
+.sg-wrap{max-width:760px;margin:0 auto;padding:0 16px}
+.sg-hdr{border-bottom:1px solid var(--line);background:var(--surface)}
+.sg-hdr .sg-wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:64px}
+.sg-tel{font-weight:700;color:var(--fg);text-decoration:none;white-space:nowrap}
+main.sg-wrap{padding-top:22px;padding-bottom:40px}
+.sg-load,.sg-msg{color:var(--muted)}
+.sg-msg{background:var(--alt);border-radius:var(--r-sm);padding:16px}
+.sg-msg b{color:var(--fg)}
+.sg-h1{font-size:clamp(24px,5vw,32px);line-height:1.15;letter-spacing:-.02em;margin:0 0 4px;font-variation-settings:"wdth" 104}
+.sg-sub{color:var(--muted);margin:0 0 18px;font-size:15px}
+.sg-card{border:1px solid var(--line);border-radius:var(--r);padding:16px;margin:0 0 14px;background:var(--surface)}
+.sg-card h2{font-size:18px;margin:0 0 10px}
+.sg-client{display:grid;gap:2px;font-size:15px}
+.sg-client span{color:var(--muted);font-size:13px}
+.sg-opt{position:relative}
+.sg-opt.choix{cursor:pointer}
+.sg-opt.choisie{border-color:var(--cold);box-shadow:0 0 0 2px var(--cold)}
+.sg-opt-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.sg-opt-head label{display:flex;gap:10px;align-items:center;font-weight:700;font-size:17px;cursor:pointer}
+.sg-opt-head input{width:20px;height:20px;accent-color:var(--cold);flex:none}
+.sg-total{font-size:22px;font-weight:800;white-space:nowrap}
+.sg-lignes{width:100%;min-width:0;border-collapse:collapse;font-size:14px}
+.sg-lignes td{padding:7px 0;border-top:1px solid var(--line);border-bottom:0;vertical-align:top;font-size:14.5px;font-weight:600;white-space:normal}
+.sg-lignes td:last-child{text-align:right;white-space:nowrap;padding-left:10px}
+.sg-lignes small{display:block;color:var(--muted);font-weight:400;font-size:13px}
+.sg-acompte{font-size:13px;color:var(--muted);margin-top:8px}
+.sg-info{font-size:13.5px;color:var(--muted)}
+.sg-info p{margin:0 0 8px}
+details.sg-det{border-top:1px solid var(--line);padding-top:10px;margin-top:10px;font-size:13.5px;color:var(--muted)}
+details.sg-det summary{cursor:pointer;color:var(--fg);font-weight:600}
+.sg-form label.sg-l{display:block;font-weight:600;margin:0 0 6px;font-size:15px}
+.sg-mt{margin-top:14px !important}
+.sg-input{width:100%;box-sizing:border-box;font:inherit;font-size:17px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--bg);color:var(--fg)}
+.sg-input:focus{outline:2px solid var(--cold);outline-offset:1px}
+.sg-pad{position:relative;border:1.5px dashed #9AA9BA;border-radius:var(--r-sm);background:#fff;margin-top:6px}
+.sg-pad canvas{display:block;width:100%;height:170px;touch-action:none;cursor:crosshair;border-radius:var(--r-sm)}
+.sg-pad .sg-ph{position:absolute;inset:0;display:grid;place-items:center;color:#9AA9BA;pointer-events:none;font-size:15px}
+.sg-pad.ecrit .sg-ph{display:none}
+.sg-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0 14px;font-size:13px;color:var(--muted)}
+.sg-lien{background:none;border:0;padding:4px 0;font:inherit;color:var(--cold);text-decoration:underline;cursor:pointer}
+.sg-check{display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;font-size:15px;cursor:pointer}
+.sg-check input{width:20px;height:20px;margin-top:2px;flex:none;accent-color:var(--cold)}
+.sg-check small{display:block;color:var(--muted);font-size:13px}
+.sg-btn{display:block;width:100%;border:0;border-radius:999px;padding:16px 20px;font:inherit;font-weight:800;font-size:17px;background:var(--warm);color:var(--warm-ink);cursor:pointer;margin-top:6px}
+.sg-btn:hover{background:var(--warm-deep)}
+.sg-btn[disabled]{opacity:.6;cursor:progress}
+.sg-err{color:var(--warm-deep);font-weight:600;font-size:14px;min-height:1.2em;margin:8px 0 0}
+.sg-ok{border:2px solid var(--ok);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.sg-ok h1{color:var(--ok);font-size:24px;margin:0 0 6px}
+.sg-iban{font-family:ui-monospace,Consolas,monospace;font-size:15px;background:var(--alt);padding:10px 12px;border-radius:var(--r-sm);word-break:break-all;margin:6px 0}
+.sg-ftr{border-top:1px solid var(--line);padding:16px 0 28px;font-size:12.5px;color:var(--muted)}
+.sg-ftr a{color:inherit}
+@media (max-width:420px){.sg-tel{font-size:15px}.logo small{display:none}}

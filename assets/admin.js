@@ -721,6 +721,8 @@
       f.pdf && /^https:\/\/(drive|docs)\.google\.com\//.test(f.pdf) ? el("a", { class: "ad-btn", href: f.pdf, target: "_blank", rel: "noopener noreferrer" }, "Voir le PDF") : null,
       f.brouillon ? el("a", { class: "ad-btn", href: "https://mail.google.com/mail/?authuser=thermaz.fr@gmail.com#drafts", target: "_blank", rel: "noopener noreferrer" }, icon("mail", 16), "Ouvrir les brouillons Gmail") : null,
       t ? el("a", { class: "ad-btn ad-btn--main", href: "sms:" + t + "?&body=" + encodeURIComponent(f.sms) }, icon("chat", 16), "Envoyer le SMS au client") : null,
+      f.lien ? el("p", { class: "ad-muted", text: "Le mail et le SMS contiennent le lien pour signer en ligne. Quand il signe : fiche en « Signé », alerte Telegram, mail d'acompte avec 3 dates de pose prêt en brouillon." }) : null,
+      f.lien ? el("button", { type: "button", class: "ad-btn", text: "Copier le lien de signature", onclick: () => navigator.clipboard.writeText(f.lien).then(() => toast("Lien copié"), () => toast(f.lien)) }) : null,
       el("button", { type: "button", class: "ad-btn", text: "Fermer", onclick: () => $("#devis").close() })
     ].filter(Boolean));
   }
