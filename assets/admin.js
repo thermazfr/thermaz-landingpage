@@ -640,7 +640,7 @@
   async function ouvrirDevis(r) {
     await chargerCatalogue();
     if (!CAT.length) return toast("Catalogue du site introuvable.");
-    Object.assign(dv, { row: r ? r.row : null, civilite: "", marque: "Daikin", gamme: "", gamme2: "aucune", systemes: [], liaisons: 0, pompe: 0, depose: 0, hauteur: 0, autreL: "", autreM: 0, copro: false, remarques: "", fait: null });
+    Object.assign(dv, { row: r ? r.row : null, civilite: "", marque: "Daikin", gamme: "", gamme2: "aucune", systemes: [], liaisons: 0, pompe: 0, depose: 0, hauteur: 0, autreL: "", autreM: 0, copro: false, remarques: "", email: "", fait: null });
     dv.systemes = [{ u: 1, kw: kwDefaut(1) }];
     $("#dv-titre").textContent = "Préparer le devis";
     rendreDevis();
@@ -656,6 +656,9 @@
     const clients = (state.data || []).filter(r => !SIDE.includes(r.statut) && r.statut !== "Soldé").slice().reverse();
     box.replaceChildren(...[
       el("label", {}, "Client", sel([["", "Choisir…"], ...clients.map(r => [r.row, r.nom.replace(/\([^)]*\)?/g, " ").replace(/\s+/g, " ").trim() + (r.commune ? " · " + r.commune : "")])], dv.row || "", v => { dv.row = Number(v) || null; rendreDevis(); }, "Client")),
+      clientDevis() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clientDevis().email || "")
+        ? el("label", {}, "E-mail du client (pas sur la fiche : pour lui envoyer le devis en 1 clic)", el("input", { type: "email", inputmode: "email", autocomplete: "off", value: dv.email || "", oninput: e => { dv.email = e.target.value.trim(); } }))
+        : null,
       el("div", { class: "ad-chips" }, ...["Monsieur", "Madame"].map(c => el("button", { type: "button", "aria-pressed": String(dv.civilite === c), text: c, onclick: () => { dv.civilite = dv.civilite === c ? "" : c; rendreDevis(); } }))),
       el("label", {}, "Marque", sel([...new Set(CAT.map(c => c.b))].map(b => [b, b]), dv.marque, v => { dv.marque = v; dv.systemes = dv.systemes.map(s => ({ u: s.u, kw: kwPossibles(v, s.u).includes(s.kw) ? s.kw : kwDefaut(s.u) })); rendreDevis(); }, "Marque")),
       el("h3", { class: "ad-h2", text: "Systèmes à poser" }),
@@ -683,7 +686,7 @@
       el("div", { class: "ad-totaux", id: "dv-tot" }),
       el("p", { class: "ad-msg", id: "m-devis" }),
       el("button", { type: "button", class: "ad-btn ad-btn--main", id: "dv-go", onclick: e => envoyerDevis(e.currentTarget) }, "Préparer le devis")
-    ]);
+    ].filter(Boolean));
     majTotaux();
   }
   function majTotaux() {
@@ -701,14 +704,15 @@
     const r = clientDevis();
     if (!r) return msg("m-devis", "Choisis le client.");
     if (!dv.gamme) return msg("m-devis", "Il manque une gamme avec un prix sur le site.");
+    if (dv.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(dv.email)) return msg("m-devis", "L'adresse e-mail n'est pas valide.");
     busy(btn, async () => {
       msg("m-devis", "Préparation du devis…", true);
       const res = await api("devis", {
         row: r.row, nom: r.nom, civilite: dv.civilite, marque: dv.marque, gamme: dv.gamme, gamme2: dv.gamme2 === "aucune" ? "" : dv.gamme2,
-        systemes: dv.systemes.map(s => ({ u: s.u, kw: s.kw })), supplements: supplementsDevis(), remarques: dv.remarques.trim(), copro: dv.copro
+        systemes: dv.systemes.map(s => ({ u: s.u, kw: s.kw })), supplements: supplementsDevis(), remarques: dv.remarques.trim(), copro: dv.copro, email: dv.email || ""
       });
       if (!res.ok) return msg("m-devis", err(res));
-      dv.fait = { ...res, nom: r.nom };
+      dv.fait = { ...res, nom: r.nom, row: r.row };
       rendreDevis();
       refresh(true);
     });
@@ -719,14 +723,32 @@
       el("div", { class: "ad-done" },
         el("b", { text: "Devis " + f.numero + " prêt" }),
         el("p", { text: f.options.map(o => o.marque + " " + o.gamme + " : " + euro(o.total)).join(" · ") }),
-        el("p", { class: "ad-muted", text: f.brouillon ? "Le mail est en brouillon dans Gmail, PDF joint. Relis-le et envoie-le : la fiche passera seule en « Devis envoyé »." : "Pas d'e-mail sur la fiche : le PDF est dans Drive, envoie-le par le moyen de ton choix." })),
+        el("p", { class: "ad-muted", text: f.envoye ? "Envoyé à " + f.envoye + " : message, PDF et lien de signature. La fiche est passée en « Devis envoyé »."
+          : f.brouillon ? "Mail prêt pour " + (f.mail || "le client") + " : message, PDF joint et lien de signature. Vérifie le PDF puis envoie en 1 clic."
+          : "Pas d'e-mail sur la fiche : le PDF est dans Drive, envoie le lien de signature par SMS." })),
+      f.brouillon && !f.envoye ? el("button", { type: "button", class: "ad-btn ad-btn--main", onclick: e => envoyerDevisMail(e.currentTarget) }, icon("mail", 16), "Envoyer le devis par mail") : null,
+      el("p", { class: "ad-msg", id: "m-envoi" }),
       f.pdf && /^https:\/\/(drive|docs)\.google\.com\//.test(f.pdf) ? el("a", { class: "ad-btn", href: f.pdf, target: "_blank", rel: "noopener noreferrer" }, "Voir le PDF") : null,
-      f.brouillon ? el("a", { class: "ad-btn", href: "https://mail.google.com/mail/?authuser=thermaz.fr@gmail.com#drafts", target: "_blank", rel: "noopener noreferrer" }, icon("mail", 16), "Ouvrir les brouillons Gmail") : null,
-      t ? el("a", { class: "ad-btn ad-btn--main", href: "sms:" + t + "?&body=" + encodeURIComponent(f.sms) }, icon("chat", 16), "Envoyer le SMS au client") : null,
+      f.brouillon && !f.envoye ? el("a", { class: "ad-btn", href: "https://mail.google.com/mail/?authuser=thermaz.fr@gmail.com#drafts", target: "_blank", rel: "noopener noreferrer" }, icon("mail", 16), "Modifier le mail dans Gmail") : null,
+      t ? el("a", { class: "ad-btn" + (f.brouillon ? "" : " ad-btn--main"), href: "sms:" + t + "?&body=" + encodeURIComponent(f.sms) }, icon("chat", 16), "Envoyer le SMS au client") : null,
       f.lien ? el("p", { class: "ad-muted", text: "Le mail et le SMS contiennent le lien pour signer en ligne. Quand il signe : fiche en « Signé », alerte Telegram, mail d'acompte avec 3 dates de pose prêt en brouillon." }) : null,
       f.lien ? el("button", { type: "button", class: "ad-btn", text: "Copier le lien de signature", onclick: () => navigator.clipboard.writeText(f.lien).then(() => toast("Lien copié"), () => toast(f.lien)) }) : null,
       el("button", { type: "button", class: "ad-btn", text: "Fermer", onclick: () => $("#devis").close() })
     ].filter(Boolean));
+  }
+
+  async function envoyerDevisMail(btn) {
+    const f = dv.fait;
+    if (!confirm("Envoyer le devis n° " + f.numero + " à " + (f.mail || "ce client") + " maintenant ?")) return;
+    busy(btn, async () => {
+      msg("m-envoi", "Envoi…", true);
+      const res = await api("envoyerDevis", { numero: f.numero, row: f.row, nom: f.nom });
+      if (!res.ok) return msg("m-envoi", err(res));
+      f.envoye = res.a || f.mail || "le client";
+      rendreDevis();
+      refresh(true);
+      toast("Devis envoyé");
+    });
   }
 
   /* ----- Mails du client : lire et répondre sans ouvrir Gmail ----- */
@@ -921,7 +943,8 @@
       }
       case "trace": return { ok: true };
       case "facture": return { ok: true, numero: "F-2026-DEMO", total: 130, reste: 0, pdf: "", brouillon: true };
-      case "devis": return { ok: true, numero: "D-2026-DEMO", brouillon: true, pdf: "", tel: "06 00 00 00 01", sms: "Bonjour, c'est Andy de Thermaz. Je viens de vous envoyer le devis par mail (démo).", options: [{ marque: data.marque, gamme: data.gamme, total: 5209 }].concat(data.gamme2 ? [{ marque: data.marque, gamme: data.gamme2, total: 6252 }] : []) };
+      case "envoyerDevis": return { ok: true, a: "client@exemple.fr" };
+      case "devis": return { ok: true, numero: "D-2026-DEMO", brouillon: true, mail: data.email || "client@exemple.fr", lien: "https://thermaz.fr/signer.html?d=D-2026-DEMO", pdf: "", tel: "06 00 00 00 01", sms: "Bonjour, c'est Andy de Thermaz. Je viens de vous envoyer le devis par mail (démo).", options: [{ marque: data.marque, gamme: data.gamme, total: 5209 }].concat(data.gamme2 ? [{ marque: data.marque, gamme: data.gamme2, total: 6252 }] : []) };
       case "traces": return { ok: true, rows: (state.traces || []).slice() };
       case "mailsClient": return { ok: true, email: "client@exemple.fr", fils: [
         { id: "t1", objet: "Re: Votre devis climatisation n° D-2026-004 – Thermaz", nb: 3, date: "07/11 18:42", deClient: true, extrait: "Bonjour Andy, merci pour le devis. Est-ce qu'on peut mettre l'unité extérieure côté jardin plutôt que sur la façade ? Bonne soirée." },
