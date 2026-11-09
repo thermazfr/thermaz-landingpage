@@ -78,6 +78,26 @@ const THERMAZ = {
     }
   });
 
+  /* ---- Photos de chantier en fond (pages Ads) : la 1re s'affiche tout de suite,
+     les autres ne se chargent qu'après la page, puis le défilement démarre ---- */
+  (function heroPhotos() {
+    const bg = document.querySelector(".ph-bg");
+    if (!bg || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const start = () => {
+      const rest = Array.from(bg.querySelectorAll("img[data-src]"));
+      let left = rest.length;
+      const ready = () => { if (--left <= 0) bg.classList.add("ph-run"); };
+      rest.forEach(im => {
+        im.addEventListener("load", ready, { once: true });
+        im.addEventListener("error", ready, { once: true });
+        im.srcset = im.dataset.srcset; im.src = im.dataset.src;
+      });
+      if (!left) bg.classList.add("ph-run");
+    };
+    const later = () => ("requestIdleCallback" in window) ? requestIdleCallback(start, { timeout: 3000 }) : setTimeout(start, 1500);
+    if (document.readyState === "complete") later(); else addEventListener("load", later, { once: true });
+  })();
+
   /* ---- Bandeau cookies : rien n'est mesuré sans accord ---- */
   (function consent() {
     let choice = null;
