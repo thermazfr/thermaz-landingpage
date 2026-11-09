@@ -655,7 +655,7 @@
     const champ = (lab, val, onin, attrs) => el("label", {}, lab, el("input", { value: val || "", inputmode: "decimal", ...(attrs || {}), oninput: e => { onin(e.target.value); majTotaux(); } }));
     const clients = (state.data || []).filter(r => !SIDE.includes(r.statut) && r.statut !== "Soldé").slice().reverse();
     box.replaceChildren(...[
-      el("label", {}, "Client", sel([["", "Choisir…"], ...clients.map(r => [r.row, r.nom + (r.commune ? " · " + r.commune : "")])], dv.row || "", v => { dv.row = Number(v) || null; rendreDevis(); }, "Client")),
+      el("label", {}, "Client", sel([["", "Choisir…"], ...clients.map(r => [r.row, r.nom.replace(/\([^)]*\)?/g, " ").replace(/\s+/g, " ").trim() + (r.commune ? " · " + r.commune : "")])], dv.row || "", v => { dv.row = Number(v) || null; rendreDevis(); }, "Client")),
       el("div", { class: "ad-chips" }, ...["Monsieur", "Madame"].map(c => el("button", { type: "button", "aria-pressed": String(dv.civilite === c), text: c, onclick: () => { dv.civilite = dv.civilite === c ? "" : c; rendreDevis(); } }))),
       el("label", {}, "Marque", sel([...new Set(CAT.map(c => c.b))].map(b => [b, b]), dv.marque, v => { dv.marque = v; dv.systemes = dv.systemes.map(s => ({ u: s.u, kw: kwPossibles(v, s.u).includes(s.kw) ? s.kw : kwDefaut(s.u) })); rendreDevis(); }, "Marque")),
       el("h3", { class: "ad-h2", text: "Systèmes à poser" }),
