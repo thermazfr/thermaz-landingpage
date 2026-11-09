@@ -390,17 +390,16 @@ legend{font-weight:700;font-size:15.5px;margin-bottom:10px;padding:0}
 .ph-media{position:relative;overflow:hidden;isolation:isolate}
 .ph-media>.wrap{position:relative;z-index:1}
 .ph-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
-.ph-bg>img,.ph-bg>picture{position:absolute;inset:0;width:100%;height:100%;opacity:0}
-.ph-bg img{display:block;width:100%;height:100%;object-fit:cover}
-.ph-bg>:first-child{opacity:1}
-.ph-run>img,.ph-run>picture{animation:phFade 24s linear infinite}
-.ph-run>:nth-child(1){animation-delay:-1s}
-.ph-run>:nth-child(2){animation-delay:5s}
-.ph-run>:nth-child(3){animation-delay:11s}
-.ph-run>:nth-child(4){animation-delay:17s}
+.ph-bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0}
+.ph-bg img:first-child{opacity:1}
+.ph-run img{animation:phFade 24s linear infinite}
+.ph-run img:nth-child(1){animation-delay:-1s}
+.ph-run img:nth-child(2){animation-delay:5s}
+.ph-run img:nth-child(3){animation-delay:11s}
+.ph-run img:nth-child(4){animation-delay:17s}
 .ph-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,22,34,.66) 0%,rgba(11,22,34,.80) 50%,rgba(11,22,34,.93) 100%)}
 @keyframes phFade{0%{opacity:0}4%{opacity:1}25%{opacity:1}29%{opacity:0}100%{opacity:0}}
-@media (prefers-reduced-motion:reduce){.ph-run>*{animation:none}}
+@media (prefers-reduced-motion:reduce){.ph-run img{animation:none}}
 .hero-price{margin:18px 0 0;font-size:clamp(19px,2.4vw,24px);font-weight:600;color:var(--on-band);line-height:1.3}
 .hero-price b{color:color-mix(in srgb,var(--warm) 68%,#fff);font-weight:800;white-space:nowrap}
 .hero-price span{display:block;margin-top:4px;font-size:15px;font-weight:400;color:var(--on-band-muted)}

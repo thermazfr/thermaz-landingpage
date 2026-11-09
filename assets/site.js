@@ -86,14 +86,13 @@ const THERMAZ = {
     const start = () => {
       const rest = Array.from(bg.querySelectorAll("img[data-src]"));
       let left = rest.length;
-      const run = () => setTimeout(() => bg.classList.add("ph-run"), 4000);
-      const ready = () => { if (--left === 0) run(); };
+      const ready = () => { if (--left <= 0) bg.classList.add("ph-run"); };
       rest.forEach(im => {
         im.addEventListener("load", ready, { once: true });
         im.addEventListener("error", ready, { once: true });
         im.srcset = im.dataset.srcset; im.src = im.dataset.src;
       });
-      if (!left) run();
+      if (!left) bg.classList.add("ph-run");
     };
     const later = () => ("requestIdleCallback" in window) ? requestIdleCallback(start, { timeout: 3000 }) : setTimeout(start, 1500);
     if (document.readyState === "complete") later(); else addEventListener("load", later, { once: true });
