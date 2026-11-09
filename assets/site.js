@@ -93,7 +93,7 @@ const THERMAZ = {
     function show() {
       const b = document.createElement("div");
       b.className = "consent"; b.setAttribute("role", "dialog"); b.setAttribute("aria-label", "Cookies de mesure");
-      b.innerHTML = '<p>J\'utilise des cookies Google pour savoir quelles annonces et quelles pages vous amènent ici, et améliorer le site. Rien n\'est activé sans votre accord. <a href="mentions-legales.html#cookies">En savoir plus</a></p><div class="consent-btns"><button type="button" class="btn btn-line btn-sm" data-c="denied">Refuser</button><button type="button" class="btn btn-ink btn-sm" data-c="granted">Accepter</button></div>';
+      b.innerHTML = '<p>Cookies Google de mesure, seulement avec votre accord. <a href="mentions-legales.html#cookies">En savoir plus</a></p><div class="consent-btns"><button type="button" class="btn btn-line btn-sm" data-c="denied">Refuser</button><button type="button" class="btn btn-ink btn-sm" data-c="granted">Accepter</button></div>';
       b.addEventListener("click", e => { const btn = e.target.closest("[data-c]"); if (!btn) return; set(btn.dataset.c); b.hidden = true; });
       document.body.appendChild(b);
     }
