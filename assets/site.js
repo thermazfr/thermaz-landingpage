@@ -220,12 +220,16 @@ const THERMAZ = {
   });
 
   /* ---- Provenance du visiteur (Google Ads, etc.) ---- */
+  // RGPD : l'identifiant de clic Google (gclid) n'est gardé et transmis qu'avec l'accord cookies du visiteur.
   const q = new URLSearchParams(location.search);
-  ["gclid", "utm_source", "utm_medium", "utm_campaign", "utm_term"].forEach(k => { if (q.get(k)) store.set("thz_" + k, q.get(k)); });
+  const accordMesure = () => { try { return localStorage.getItem("thz_consent") === "granted"; } catch { return false; } };
+  let gclidPage = q.get("gclid") || "";
+  ["gclid", "utm_source", "utm_medium", "utm_campaign", "utm_term"].forEach(k => { if (q.get(k) && (k !== "gclid" || accordMesure())) store.set("thz_" + k, q.get(k)); });
   if (!store.get("thz_landing")) store.set("thz_landing", location.pathname);
   function attribution() {
     const a = {};
-    ["gclid", "utm_source", "utm_medium", "utm_campaign", "utm_term", "landing"].forEach(k => { const v = store.get("thz_" + k); if (v) a[k] = v; });
+    ["utm_source", "utm_medium", "utm_campaign", "utm_term", "landing"].forEach(k => { const v = store.get("thz_" + k); if (v) a[k] = v; });
+    if (accordMesure()) { const g = store.get("thz_gclid") || gclidPage; if (g) a.gclid = g; }
     if (!a.utm_source && a.gclid) a.utm_source = "google-ads";
     return a;
   }
@@ -264,6 +268,15 @@ const THERMAZ = {
   }
   // Utilisé par le configurateur de prix (assets/configurateur.js)
   window.thermazSendLead = sendLead;
+
+  /* ---- RGPD : mention d'information sous chaque formulaire de demande ---- */
+  $$(".qw-status, form[data-lead] .status").forEach(st => {
+    if (st.parentElement.querySelector(".rgpd-note")) return;
+    const p = document.createElement("p");
+    p.className = "hint rgpd-note"; p.style.cssText = "font-size:12.5px;margin-top:8px";
+    p.innerHTML = 'Vos coordonnées servent uniquement à vous rappeler et à faire votre devis. <a href="mentions-legales.html#donnees">Vos données</a>';
+    st.after(p);
+  });
 
   /* ---- Formulaires simples ---- */
   $$("form[data-lead]").forEach(f => f.addEventListener("submit", async e => {
