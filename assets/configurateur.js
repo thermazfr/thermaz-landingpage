@@ -81,8 +81,11 @@
     if (!m) return "";
     const f = FICHES[m.b + "|" + m.g];
     const ts = f ? tailles(m.kw).map(k => f.t[k]).filter(Boolean) : [];
-    if (!ts.length || ts.length !== tailles(m.kw).length)   // pas de chiffre officiel : on n'invente rien
-      return '<p class="cf-bruit-t">Niveau sonore</p><p class="cf-bruit-n" style="margin-top:6px">Les chiffres officiels de ce modèle sont sur la fiche technique du fabricant, que je vous envoie avec le devis.</p>';
+    if (!ts.length || ts.length !== tailles(m.kw).length) {   // pas de chiffre officiel pour ce modèle
+      // Jusqu'à 4,2 kW, toutes les fiches relevées donnent 16 à 25 dB en vitesse silence : on l'indique comme ordre de grandeur.
+      if (kwMax(m.kw) <= 4.2 && m.t !== "gainable") return '<p class="cf-bruit-t">Niveau sonore</p><ul><li><span>Unité intérieure</span><b>environ 20 à 25 dB</b></li></ul><p class="cf-bruit-n">En vitesse silence. Chiffre exact sur la fiche du fabricant, envoyée avec le devis.</p>';
+      return '<p class="cf-bruit-t">Niveau sonore</p><p class="cf-bruit-n" style="margin-top:6px">Chiffre exact sur la fiche du fabricant, envoyée avec le devis.</p>';
+    }
     const lo = Math.min(...ts.map(t => t.i[0]));
     const hi = ts.every(t => t.i[1]) ? Math.max(...ts.map(t => t.i[1])) : 0;   // maxi seulement s'il est connu pour chaque unité
     const src = (ts.find(t => t.src) || {}).src || f.src;
