@@ -113,7 +113,7 @@ const THERMAZ = {
     function show() {
       const b = document.createElement("div");
       b.className = "consent"; b.setAttribute("role", "dialog"); b.setAttribute("aria-label", "Cookies de mesure");
-      b.innerHTML = '<p>Cookies Google de mesure, seulement avec votre accord. <a href="mentions-legales.html#cookies">En savoir plus</a></p><div class="consent-btns"><button type="button" class="btn btn-line btn-sm" data-c="denied">Refuser</button><button type="button" class="btn btn-ink btn-sm" data-c="granted">Accepter</button></div>';
+      b.innerHTML = '<p>Cookies de mesure Google, seulement si vous acceptez. <a href="mentions-legales.html#cookies">Détails</a></p><div class="consent-btns"><button type="button" class="btn btn-line btn-sm" data-c="denied">Refuser</button><button type="button" class="btn btn-ink btn-sm" data-c="granted">Accepter</button></div>';
       b.addEventListener("click", e => { const btn = e.target.closest("[data-c]"); if (!btn) return; set(btn.dataset.c); b.hidden = true; });
       document.body.appendChild(b);
     }
@@ -172,6 +172,9 @@ const THERMAZ = {
       const short = rating.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
       // Badge du haut de l'accueil : la note seule, à côté du logo Google et des étoiles
       if (el.dataset.rating === "note") { el.textContent = short; el.closest("a").setAttribute("aria-label", "Note Google : " + short + " sur 5, voir les avis"); return; }
+      // Page installation : la note et le nombre d'avis, toujours
+      if (el.dataset.rating === "note-avis") { el.textContent = count ? short + " · " + count + " avis" : short; el.closest("a").setAttribute("aria-label", "Note Google : " + short + " sur 5" + (count ? ", " + count + " avis" : "") + ", voir les avis"); return; }
+      if (el.dataset.rating === "avis") { el.textContent = short + "/5" + (count ? " · " + count + " avis Google" : " sur Google"); return; }
       const note = rating.toLocaleString("fr-FR", { minimumFractionDigits: 1 }) + "/5";
       el.textContent = count >= MIN_AVIS_AFFICHES ? note + " · " + count + " avis Google" : note + " sur Google";
     });
@@ -181,7 +184,7 @@ const THERMAZ = {
     if (!box || !list.length) return;
     box.className = "reviews";
     box.innerHTML = "";
-    list.forEach(r => {
+    list.slice(0, Number(box.dataset.max) || list.length).forEach(r => {
       const el = document.createElement("article");
       el.className = "rev";
       el.innerHTML = '<div class="stars"></div><p></p><div class="who"></div>';
