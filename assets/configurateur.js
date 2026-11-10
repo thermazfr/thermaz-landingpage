@@ -73,7 +73,25 @@
   /* ---- État ---- */
   const S = { type: "murale", m2: 25, rooms: [25], gamme: "ess", line: "", showAll: false, model: null, manual: false, liaison: 0, contrat: false,
               nom: "", tel: "", mail: "", commune: "", delai: "Dès que possible", msg: "" };
-  let CAT = [];
+  let CAT = [], FICHES = {};
+
+  /* ---- Niveau sonore (data/fiches.json, relevé sur les fiches des fabricants) ---- */
+  const tailles = s => String(s).split("+").map(x => x.replace(/kW/i, "").trim());
+  function bruit(m) {
+    const f = m && FICHES[m.b + "|" + m.g];
+    if (!f) return "";
+    const ts = tailles(m.kw).map(k => f.t[k]).filter(Boolean);
+    if (!ts.length || ts.length !== tailles(m.kw).length) return "";   // une unité sans chiffre officiel : on n'affiche rien
+    const lo = Math.min(...ts.map(t => t.i[0])), hi = Math.max(...ts.map(t => t.i[1]));
+    const src = (ts.find(t => t.src) || {}).src || f.src;
+    let h = '<p class="cf-bruit-t">Niveau sonore <span>(fiche du fabricant, en froid)</span></p><ul>' +
+      "<li><span>" + (m.u > 1 ? "Unités intérieures" : "Unité intérieure") + "</span><b>" +
+      (m.u > 1 ? "dès " + lo + " dB" : lo + " à " + hi + " dB") + "</b></li>";
+    if (m.u === 1 && ts[0].o) h += "<li><span>Groupe extérieur</span><b>" + ts[0].o + " dB</b></li>";
+    h += '</ul><p class="cf-bruit-n">Repères : 20 dB, un murmure. 40 dB, une bibliothèque. 50 dB, une conversation calme.' +
+      (src ? ' <a href="' + esc(src) + '" target="_blank" rel="noopener">Fiche technique ' + esc(m.b) + "</a>" : "") + "</p>";
+    return h;
+  }
 
   /* ---- Calculs ---- */
   const multi = () => S.type === "multi";
@@ -142,6 +160,8 @@
       "<div><dt>Puissance</dt><dd>" + (m ? kwTxt(m.kw) : "–") + "</dd></div>" +
       "<div><dt>Unités</dt><dd>" + (m ? m.u + (m.u > 1 ? " intérieures" : " intérieure") : "–") + "</dd></div>" +
       "<div><dt>Pose</dt><dd>Par l'artisan</dd></div>";
+    const bb = $("#c-bruit"), bh = bruit(m);
+    if (bb) { if (bb.innerHTML !== bh) bb.innerHTML = bh; bb.hidden = !bh; }
 
     // Type
     $("#c-type").innerHTML = Object.entries(TYPES).map(([k, T]) => chip("c-type", k, S.type === k, T.l)).join("");
@@ -272,6 +292,7 @@
   })();
 
   /* ---- Démarrage ---- */
+  fetch("data/fiches.json").then(r => r.json()).then(d => { FICHES = d; if (CAT.length) render(); }).catch(() => {});
   fetch("data/catalogue.json").then(r => r.json()).then(d => { CAT = d; render(); }).catch(() => {
     $("#c-form").hidden = false;
     $("#c-err").textContent = "Le catalogue n'a pas pu se charger. Appelez le 06 51 10 64 35, je vous donne le prix au téléphone.";
