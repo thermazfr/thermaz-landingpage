@@ -78,18 +78,20 @@
   /* ---- Niveau sonore (data/fiches.json, relevé sur les fiches des fabricants) ---- */
   const tailles = s => String(s).split("+").map(x => x.replace(/kW/i, "").trim());
   function bruit(m) {
-    const f = m && FICHES[m.b + "|" + m.g];
-    if (!f) return "";
-    const ts = tailles(m.kw).map(k => f.t[k]).filter(Boolean);
-    if (!ts.length || ts.length !== tailles(m.kw).length) return "";   // une unité sans chiffre officiel : on n'affiche rien
-    const lo = Math.min(...ts.map(t => t.i[0])), hi = Math.max(...ts.map(t => t.i[1]));
+    if (!m) return "";
+    const f = FICHES[m.b + "|" + m.g];
+    const ts = f ? tailles(m.kw).map(k => f.t[k]).filter(Boolean) : [];
+    if (!ts.length || ts.length !== tailles(m.kw).length)   // pas de chiffre officiel : on n'invente rien
+      return '<p class="cf-bruit-t">Niveau sonore</p><p class="cf-bruit-n" style="margin-top:6px">Les chiffres officiels de ce modèle sont sur la fiche technique du fabricant, que je vous envoie avec le devis.</p>';
+    const lo = Math.min(...ts.map(t => t.i[0]));
+    const hi = ts.every(t => t.i[1]) ? Math.max(...ts.map(t => t.i[1])) : 0;   // maxi seulement s'il est connu pour chaque unité
     const src = (ts.find(t => t.src) || {}).src || f.src;
-    let h = '<p class="cf-bruit-t">Niveau sonore <span>(fiche du fabricant, en froid)</span></p><ul>' +
+    let h = '<p class="cf-bruit-t">Niveau sonore <span>(données du fabricant, en froid)</span></p><ul>' +
       "<li><span>" + (m.u > 1 ? "Unités intérieures" : "Unité intérieure") + "</span><b>" +
-      (m.u > 1 ? "dès " + lo + " dB" : lo + " à " + hi + " dB") + "</b></li>";
+      (m.u > 1 || !hi ? "dès " + lo + " dB" : lo + " à " + hi + " dB") + "</b></li>";
     if (m.u === 1 && ts[0].o) h += "<li><span>Groupe extérieur</span><b>" + ts[0].o + " dB</b></li>";
-    h += '</ul><p class="cf-bruit-n">Repères : 20 dB, un murmure. 40 dB, une bibliothèque. 50 dB, une conversation calme.' +
-      (src ? ' <a href="' + esc(src) + '" target="_blank" rel="noopener">Fiche technique ' + esc(m.b) + "</a>" : "") + "</p>";
+    h += '</ul><p class="cf-bruit-n">' + (f.note ? esc(f.note) + ". " : "") + "Repères : 20 dB, un murmure. 40 dB, une bibliothèque. 50 dB, une conversation calme." +
+      (src ? ' <a href="' + esc(src) + '" target="_blank" rel="noopener">Voir la fiche technique</a>' : "") + "</p>";
     return h;
   }
 
