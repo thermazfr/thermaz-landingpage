@@ -589,3 +589,27 @@ legend{font-weight:700;font-size:15.5px;margin-bottom:10px;padding:0}
 .offer{display:inline-block;margin:14px 0 4px;padding:10px 16px;border-radius:12px;background:rgba(211,56,31,.14);border:1px solid rgba(211,56,31,.45);font-size:15.5px;line-height:1.45;max-width:62ch}
 .offer b,.h-hp-offer b{display:inline-block;margin-right:8px;padding:2px 9px;border-radius:999px;background:var(--warm);color:#fff;font-size:12.5px;letter-spacing:.02em;text-transform:uppercase;vertical-align:1px}
 .t-offer{margin:2px 0 6px;font-size:14.5px;font-weight:650;color:var(--warm-deep)}[data-offer-until][hidden]{display:none!important}
+
+/* Rappel en 2 cases (haut des pages Ads, fond sombre) */
+.rappel{margin-top:14px;max-width:560px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:var(--on-band)}
+.rappel-t{margin:0;font-size:15.5px;line-height:1.4}
+.rappel-t b{font-weight:750}
+.rappel-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.rappel input{position:static;opacity:1;pointer-events:auto;flex:1 1 130px;min-width:0;height:46px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.35);background:#fff;color:#0E1E2E;font:inherit;font-size:16px}
+.rappel input::placeholder{color:#5B6B7A}
+.rappel input:focus-visible{outline:3px solid var(--cold);outline-offset:1px}
+.rappel-btn{flex:1 1 150px;height:46px;padding:0 18px;border:0;border-radius:10px;background:var(--warm);color:#fff;font:inherit;font-size:16px;font-weight:750;cursor:pointer}
+.rappel-btn:hover{background:var(--warm-deep)}
+.rappel-btn:disabled{opacity:.6;cursor:default}
+.rappel-n{margin:6px 0 0;font-size:12.5px;line-height:1.4;color:var(--on-band-muted)}.rappel-n a{color:inherit}
+.rappel .status{margin:6px 0 0;color:#fff}
+.rappel .status.err{color:#FFB4A6}
+.rappel .rgpd-note{color:var(--on-band-muted)}
+.rappel .rgpd-note a{color:inherit}
+.rappel-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* Pages Ads : note sous les boutons, barre du bas masquée tant que le haut de page est visible */
+.hero-note{margin:12px 0 0;max-width:560px;font-size:14px;line-height:1.45;color:var(--on-band-muted)}
+.callbar{transition:transform .25s ease}
+.callbar.cb-off{transform:translateY(115%)}
+@media (max-width:899px){body.cb-hidden .consent{bottom:calc(10px + env(safe-area-inset-bottom,0px))}}
+#rappel{scroll-margin-top:90px}

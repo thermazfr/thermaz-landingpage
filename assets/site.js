@@ -117,7 +117,8 @@ const THERMAZ = {
       b.addEventListener("click", e => { const btn = e.target.closest("[data-c]"); if (!btn) return; set(btn.dataset.c); b.hidden = true; });
       document.body.appendChild(b);
     }
-    if (choice !== "granted" && choice !== "denied") show();
+    // Le bandeau attend le premier défilement (ou 5 s) pour ne pas cacher le haut de page ; rien n'est mesuré avant l'accord.
+    if (choice !== "granted" && choice !== "denied") { let shown = false; const go = () => { if (shown) return; shown = true; show(); }; addEventListener("scroll", go, { once: true, passive: true }); setTimeout(go, 5000); }
   })();
 
   /* ---- Menu mobile + menus déroulants ---- */
@@ -284,6 +285,30 @@ const THERMAZ = {
     const st = $(".status", f), d = Object.fromEntries(new FormData(f));
     if (!d.nom || !d.telephone || !d.commune) { st.className = "status err"; st.textContent = "Indiquez votre nom, votre téléphone et votre commune pour que je puisse vous rappeler."; return; }
     if (await sendLead(d, st) && THERMAZ.leadEndpoint) f.reset();
+  }));
+
+  /* ---- Barre d'appel du bas : masquée tant que le haut de page (avec ses boutons) est visible ---- */
+  (function callbarHero() {
+    const bar = $(".callbar"), hero = $(".phero");
+    if (!bar || !hero || !("IntersectionObserver" in window)) return;
+    new IntersectionObserver(([en]) => {
+      bar.classList.toggle("cb-off", en.isIntersecting);
+      document.body.classList.toggle("cb-hidden", en.isIntersecting);
+    }, { rootMargin: "0px 0px -35% 0px" }).observe(hero);
+  })();
+  document.addEventListener("click", e => {
+    if (!e.target.closest('a[href="#rappel"]')) return;
+    const i = $("#rp-prenom"); if (i) setTimeout(() => i.focus({ preventScroll: true }), 400);
+  });
+  /* ---- Rappel en 2 cases (prénom + téléphone), haut des pages Ads ---- */
+  $$("form[data-callback]").forEach(f => f.addEventListener("submit", async e => {
+    e.preventDefault();
+    const st = $(".status", f), d = Object.fromEntries(new FormData(f));
+    const prenom = String(d.prenom || "").trim(), tel = String(d.telephone || "").trim();
+    if (prenom.length < 2 || tel.replace(/\D/g, "").length < 10) { st.className = "status err"; st.textContent = "Indiquez votre prénom et un numéro de téléphone complet."; return; }
+    const btn = $("button", f); if (btn) btn.disabled = true;
+    const ok = await sendLead({ nom: prenom, telephone: tel, prestation: f.dataset.callback, message: "Demande de rappel (formulaire 2 cases, page " + location.pathname + ")" }, st);
+    if (!ok && btn) btn.disabled = false;
   }));
 
   /* ---- Calculateur de prix (page installation) ---- */
