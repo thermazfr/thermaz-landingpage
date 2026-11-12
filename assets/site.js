@@ -109,10 +109,18 @@ const THERMAZ = {
   (function consent() {
     let choice = null;
     try { choice = localStorage.getItem("thz_consent"); } catch {}
+    // Microsoft Clarity (enregistrements anonymes des visites) : chargé seulement après « Accepter »
+    const clarity = () => {
+      if (window.__thzClarity) return; window.__thzClarity = true;
+      (function (c, l, a, r, i, t, y) { c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); }; t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i; y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y); })(window, document, "clarity", "script", "zcpnfpj4x3");
+      window.clarity("consent");
+    };
+    if (choice === "granted") clarity();
     const set = v => {
       try { localStorage.setItem("thz_consent", v); } catch {}
       const g = v === "granted" ? "granted" : "denied";
       if (typeof window.gtag === "function") window.gtag("consent", "update", { ad_storage: g, ad_user_data: g, ad_personalization: g, analytics_storage: g });
+      if (g === "granted") clarity(); else if (typeof window.clarity === "function") window.clarity("consent", false);
       track("consent_" + v);
     };
     window.thermazCookies = () => { const b = document.querySelector(".consent"); if (b) b.hidden = false; else show(); };
@@ -120,7 +128,7 @@ const THERMAZ = {
     function show() {
       const b = document.createElement("div");
       b.className = "consent"; b.setAttribute("role", "dialog"); b.setAttribute("aria-label", "Cookies de mesure");
-      b.innerHTML = '<p>Cookies de mesure Google, seulement si vous acceptez. <a href="mentions-legales.html#cookies">Détails</a></p><div class="consent-btns"><button type="button" class="btn btn-line btn-sm" data-c="denied">Refuser</button><button type="button" class="btn btn-ink btn-sm" data-c="granted">Accepter</button></div>';
+      b.innerHTML = '<p>Cookies de mesure (Google, Microsoft Clarity), seulement si vous acceptez. <a href="mentions-legales.html#cookies">Détails</a></p><div class="consent-btns"><button type="button" class="btn btn-line btn-sm" data-c="denied">Refuser</button><button type="button" class="btn btn-ink btn-sm" data-c="granted">Accepter</button></div>';
       b.addEventListener("click", e => { const btn = e.target.closest("[data-c]"); if (!btn) return; set(btn.dataset.c); b.hidden = true; });
       document.body.appendChild(b);
     }
