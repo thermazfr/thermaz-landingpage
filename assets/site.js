@@ -128,12 +128,19 @@ const THERMAZ = {
     function show() {
       const b = document.createElement("div");
       b.className = "consent"; b.setAttribute("role", "dialog"); b.setAttribute("aria-label", "Cookies de mesure");
-      b.innerHTML = '<p>Cookies de mesure (Google, Microsoft Clarity), seulement si vous acceptez. <a href="mentions-legales.html#cookies">Détails</a></p><div class="consent-btns"><button type="button" class="btn btn-line btn-sm" data-c="denied">Refuser</button><button type="button" class="btn btn-ink btn-sm" data-c="granted">Accepter</button></div>';
+      b.innerHTML = '<p><span class="c-long">Cookies de mesure (Google, Microsoft Clarity), seulement si vous acceptez.</span><span class="c-short">Cookies de mesure</span> <a href="mentions-legales.html#cookies">Détails</a></p><div class="consent-btns"><button type="button" class="btn btn-line btn-sm" data-c="denied">Refuser</button><button type="button" class="btn btn-ink btn-sm" data-c="granted">Accepter</button></div>';
       b.addEventListener("click", e => { const btn = e.target.closest("[data-c]"); if (!btn) return; set(btn.dataset.c); b.hidden = true; });
       document.body.appendChild(b);
     }
-    // Le bandeau attend le premier défilement (ou 5 s) pour ne pas cacher le haut de page ; rien n'est mesuré avant l'accord.
-    if (choice !== "granted" && choice !== "denied") { let shown = false; const go = () => { if (shown) return; shown = true; show(); }; addEventListener("scroll", go, { once: true, passive: true }); setTimeout(go, 5000); }
+    // Le bandeau attend le 2e défilement (ou 15 s) pour ne pas gêner le haut de page ; rien n'est mesuré avant l'accord.
+    // Un « défilement » = une série d'événements scroll rapprochés ; une pause de plus de 600 ms en commence un nouveau.
+    if (choice !== "granted" && choice !== "denied") {
+      let shown = false, n = 0, last = 0;
+      const onScroll = () => { const t = Date.now(); if (t - last > 600) n++; last = t; if (n >= 2) go(); };
+      const go = () => { if (shown) return; shown = true; removeEventListener("scroll", onScroll); show(); };
+      addEventListener("scroll", onScroll, { passive: true });
+      setTimeout(go, 15000);
+    }
   })();
 
   /* ---- Menu mobile + menus déroulants ---- */
