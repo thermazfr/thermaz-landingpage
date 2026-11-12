@@ -83,7 +83,13 @@ const THERMAZ = {
   (function heroPhotos() {
     const bg = document.querySelector(".ph-bg");
     if (!bg || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Téléphone (< 600 px) : pas de photo de fond du tout (fond en CSS), donc rien à charger.
+    // Si l'écran s'élargit ensuite (téléphone tourné), on charge les photos à ce moment-là.
+    const phone = matchMedia("(max-width: 599px)");
+    let started = false;
     const start = () => {
+      if (started || phone.matches) return;
+      started = true;
       const rest = Array.from(bg.querySelectorAll("img[data-src]"));
       let left = rest.length;
       const ready = () => { if (--left <= 0) bg.classList.add("ph-run"); };
@@ -95,6 +101,7 @@ const THERMAZ = {
       if (!left) bg.classList.add("ph-run");
     };
     const later = () => ("requestIdleCallback" in window) ? requestIdleCallback(start, { timeout: 3000 }) : setTimeout(start, 1500);
+    if (phone.addEventListener) phone.addEventListener("change", () => { if (!phone.matches && document.readyState === "complete") later(); });
     if (document.readyState === "complete") later(); else addEventListener("load", later, { once: true });
   })();
 

@@ -391,15 +391,24 @@ legend{font-weight:700;font-size:15.5px;margin-bottom:10px;padding:0}
 .ph-media>.wrap{position:relative;z-index:1}
 .ph-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
 .ph-bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0}
-.ph-bg img:first-child{opacity:1}
+.ph-bg>img:first-child,.ph-bg>picture img{opacity:1}
 .ph-run img{animation:phFade 24s linear infinite}
-.ph-run img:nth-child(1){animation-delay:-1s}
-.ph-run img:nth-child(2){animation-delay:5s}
-.ph-run img:nth-child(3){animation-delay:11s}
-.ph-run img:nth-child(4){animation-delay:17s}
+.ph-run>img:nth-child(1),.ph-run>picture img{animation-delay:-1s}
+.ph-run>img:nth-child(2){animation-delay:5s}
+.ph-run>img:nth-child(3){animation-delay:11s}
+.ph-run>img:nth-child(4){animation-delay:17s}
 .ph-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,22,34,.66) 0%,rgba(11,22,34,.80) 50%,rgba(11,22,34,.93) 100%)}
 @keyframes phFade{0%{opacity:0}4%{opacity:1}25%{opacity:1}29%{opacity:0}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.ph-run img{animation:none}}
+/* Téléphone (< 600 px) : aucune photo de fond (elle retardait l'affichage, LCP), remplacée par un fond bleu nuit en pur CSS.
+   Même seuil dans le <link rel="preload" media>, le <picture><source media> de chaque page et heroPhotos (site.js). */
+@media (max-width:599px){
+  .ph-bg{display:none}
+  .ph-media{background:
+    radial-gradient(130% 62% at 100% 0%,color-mix(in srgb,var(--cold) 30%,transparent) 0%,transparent 62%),
+    radial-gradient(110% 40% at 0% 100%,color-mix(in srgb,var(--warm) 13%,transparent) 0%,transparent 70%),
+    linear-gradient(180deg,#10233A 0%,var(--band) 62%)}
+}
 .hero-price{margin:18px 0 0;font-size:clamp(19px,2.4vw,24px);font-weight:600;color:var(--on-band);line-height:1.3}
 .hero-price b{color:color-mix(in srgb,var(--warm) 68%,#fff);font-weight:800;white-space:nowrap}
 .hero-price span{display:block;margin-top:4px;font-size:15px;font-weight:400;color:var(--on-band-muted)}
