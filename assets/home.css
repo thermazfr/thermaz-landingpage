@@ -67,6 +67,17 @@ html.lenis,html.lenis body{height:auto}
 }
 @media (max-width:979px){.h-hero-media::after{background:linear-gradient(to top,rgba(5,11,17,.94) 0%,rgba(5,11,17,.78) 45%,rgba(5,11,17,.42) 75%,rgba(5,11,17,.6) 100%)}}
 @media (max-width:600px){.h-hero-cap .h-cap-text{display:none}.h-hero-cap{justify-content:flex-start}.h-hero .btns{width:100%}.h-hero .btns .btn{flex:1 1 100%}}
+/* Téléphone : le bouton « Obtenir mon prix » doit se voir sans défiler (Andy, 13/11). Ordinateur et tablette inchangés. */
+.h-hero-lead .lead-short{display:none}
+@media (max-width:600px){
+  .h-hero-lead .lead-long{display:none}
+  .h-hero h1 .h1-prix{display:none} /* le best-seller reste affiché sous les boutons */
+  .h-hero-lead .lead-short{display:inline}
+  .h-hero-in{padding-top:calc(var(--hdr-h) + 18px)}
+  .h-rating{margin-bottom:14px}
+  .h-hero h1{font-size:34px;max-width:none;line-height:1}
+  .h-hero-lead{font-size:17px;margin:12px 0 18px}
+}
 
 /* ---------- Engagements ---------- */
 .h-promise{border-bottom:1px solid var(--line)}
