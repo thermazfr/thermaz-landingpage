@@ -4,13 +4,19 @@
   "rating": 5,
   "count": 19,
   "url": "https://maps.google.com/?cid=2279725555113015761&g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAIYBCAA",
-  "updated": "2026-11-12T12:39:33.389Z",
+  "updated": "2026-11-13T12:09:01.147Z",
   "reviews": [
     {
       "name": "Martin Brettnacher",
       "stars": 5,
       "when": "il y a un mois",
       "text": "Très satisfait de l’intervention !\nTravail sérieux et soigné, avec de bonnes explications et de précieux conseils.\nProfessionnel, réactif et sympathique, je recommande sans hésiter"
+    },
+    {
+      "name": "Anais Cava",
+      "stars": 5,
+      "when": "il y a une semaine",
+      "text": "Très satisfaite de la prestation ! Travail sérieux, soigné et professionnel. Nettoyage de la clim réalisé avec efficacité, personne ponctuelle et agréable. Je recommande sans hésitation !"
     },
     {
       "name": "Arthur Leroyer",
@@ -29,12 +35,6 @@
       "stars": 5,
       "when": "il y a 3 semaines",
       "text": "Une prestation professionnelle, ils m’ont conseillé et aidé.\nJe recommande à 1000%"
-    },
-    {
-      "name": "Charlie PEREZ",
-      "stars": 5,
-      "when": "il y a 2 semaines",
-      "text": "Installation qualitative ! Très professionnel et minutieux je recommende vivement !"
     }
   ]
 }
