@@ -4,7 +4,7 @@
   "rating": 5,
   "count": 19,
   "url": "https://maps.google.com/?cid=2279725555113015761&g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAIYBCAA",
-  "updated": "2026-11-13T12:09:01.147Z",
+  "updated": "2026-11-14T11:26:03.588Z",
   "reviews": [
     {
       "name": "Martin Brettnacher",
@@ -25,16 +25,16 @@
       "text": "Très satisfait du service ! Travail sérieux et soigné. Je recommande."
     },
     {
-      "name": "matthieu FORGET",
-      "stars": 5,
-      "when": "il y a 3 semaines",
-      "text": "Jeune homme dynamique,  consciencieux et professionnel. Qualité de prestation et forte sympathie. Je recommande en tous points. Merci"
-    },
-    {
       "name": "Paul Michel",
       "stars": 5,
       "when": "il y a 3 semaines",
       "text": "Une prestation professionnelle, ils m’ont conseillé et aidé.\nJe recommande à 1000%"
+    },
+    {
+      "name": "matthieu FORGET",
+      "stars": 5,
+      "when": "il y a 3 semaines",
+      "text": "Jeune homme dynamique,  consciencieux et professionnel. Qualité de prestation et forte sympathie. Je recommande en tous points. Merci"
     }
   ]
 }
