@@ -38,14 +38,68 @@
 
   async function init() {
     if (!DEMO && (!/^D-(\d{4}|TEST)-\d{3,4}$/.test(D) || !/^[a-f0-9]{32}$/.test(K))) return invalide();
-    const r = await api("devisPublic", {});
+    // « vu » prévient Andy que le client a ouvert le devis, sauf si c'est Andy lui-même (espace admin connecté).
+    let andy = false;
+    try { andy = !!localStorage.getItem("thz_admin_token"); } catch (e) {}
+    const r = await api("devisPublic", { vu: !andy && !q.has("apercu") });
     if (!r.ok) return r.error === "reseau" ? msg("Connexion impossible", "Vérifiez votre connexion internet et rechargez la page. En cas de souci, appelez Andy au " + TEL + ".") : invalide();
     DV = r;
     document.title = "Devis " + r.numero + " | Thermaz";
     if (r.signe) return dejaSigne(r);
     if (r.expire) return msg("Ce devis a expiré", "Le devis n° " + r.numero + " était valable jusqu'au " + r.validite + ". Les prix du matériel bougent : appelez Andy au " + TEL + " pour le mettre à jour, c'est rapide.");
     choix = r.options.length > 1 ? 0 : 1;
+    chargerAvis();
     rendre();
+  }
+
+  /* Présentation façon « carrousel » : vraies photos de chantiers + vrais avis Google (data/avis-google.json, mis à jour tout seul). */
+  let AVIS = null;
+  async function chargerAvis() {
+    try {
+      const res = await fetch("data/avis-google.json", { cache: "no-cache" });
+      const j = await res.json();
+      if (j && j.rating && Array.isArray(j.reviews)) { AVIS = j; const p = document.getElementById("sg-pres"); if (p) p.replaceWith(presentation()); }
+    } catch (e) {}
+  }
+
+  const PHOTOS = [
+    ["assets/hero/murale-altech-pool-house-640.jpg", "Murale Altech dans un pool house"],
+    ["assets/hero/groupe-panasonic-toit-terrasse-640.jpg", "Groupe Panasonic sur toit-terrasse"],
+    ["assets/hero/murale-bosch-sejour-640.jpg", "Murale Bosch dans un séjour"],
+    ["assets/hero/groupe-altech-facade-640.jpg", "Groupe Altech en façade"]
+  ];
+
+  function presentation() {
+    const etoiles = AVIS ? "★ " + String(AVIS.rating).replace(".", ",") + (Number.isInteger(AVIS.rating) ? ",0" : "") + " · " + AVIS.count + " avis Google" : "Avis Google 5 étoiles";
+    const slides = [
+      el("div", { class: "sg-slide sg-s1" },
+        el("img", { src: "assets/hero/pose-en-cours-altech-goulotte.jpg", alt: "Pose de climatisation en cours par Thermaz", loading: "eager" }),
+        el("div", { class: "sg-s1-txt" },
+          el("b", { text: "Thermaz" }),
+          el("span", { text: "Andy, artisan climaticien à Salon-de-Provence" }),
+          el("div", { class: "sg-badges" }, [etoiles, "Prix affichés", "Pose garantie 2 ans"].map(t => el("span", { text: t }))))),
+      el("div", { class: "sg-slide sg-s2" },
+        el("b", { class: "sg-s-t", text: "Quelques chantiers" }),
+        el("div", { class: "sg-grid" }, PHOTOS.map(([src, t]) => el("figure", {}, el("img", { src, alt: t, loading: "lazy" }), el("figcaption", { text: t }))))),
+      AVIS && AVIS.reviews.length ? el("div", { class: "sg-slide sg-s3" },
+        el("b", { class: "sg-s-t", text: etoiles }),
+        AVIS.reviews.filter(a => a.text && a.stars >= 5).slice(0, 3).map(a =>
+          el("blockquote", {}, el("p", { text: "« " + (a.text.length > 120 ? a.text.slice(0, 115).replace(/\s+\S*$/, "") + "… »" : a.text + " »") }),
+            el("cite", { text: "★★★★★ " + a.name + (a.when ? " · " + a.when : "") }))),
+        /^https:\/\/(maps\.google\.com|www\.google\.com)\//.test(AVIS.url || "") ? el("a", { href: AVIS.url, target: "_blank", rel: "noopener", text: "Voir tous les avis sur Google" }) : null) : null
+    ].filter(Boolean);
+    const piste = el("div", { class: "sg-track", tabindex: "0", "aria-label": "Présentation de Thermaz, faites glisser" }, slides);
+    // Défilement fluide via CSS (scroll-behavior), plus fiable que scrollBy({behavior}) avec le « snap ».
+    const aller = i => { const n = slides.length; piste.scrollLeft = ((i % n) + n) % n * piste.clientWidth; };
+    const ici = () => Math.round(piste.scrollLeft / Math.max(1, piste.clientWidth));
+    const points = el("div", { class: "sg-dots" }, slides.map((s, i) => el("button", { type: "button", "aria-label": "Diapo " + (i + 1), class: i ? "" : "on", onclick: () => aller(i) })));
+    const fleche = sens => el("button", { type: "button", class: "sg-arr sg-arr-" + (sens < 0 ? "g" : "d"), "aria-label": sens < 0 ? "Précédent" : "Suivant", text: sens < 0 ? "‹" : "›",
+      onclick: () => aller(ici() + sens) });
+    piste.addEventListener("scroll", () => {
+      const i = ici();
+      [...points.children].forEach((b, j) => b.classList.toggle("on", i === j));
+    }, { passive: true });
+    return el("section", { id: "sg-pres", class: "sg-pres" }, el("div", { class: "sg-car" }, piste, fleche(-1), fleche(1)), points);
   }
 
   function invalide() {
@@ -87,6 +141,21 @@
     return card;
   }
 
+  // Bouton « Signer » toujours visible en bas de l'écran, caché quand le cadre de signature est à l'écran.
+  let obs = null;
+  function barreSigner() {
+    const b = el("div", { class: "sg-sticky" }, el("button", { type: "button", class: "sg-btn", text: "✍️ Signer le devis",
+      onclick: () => document.getElementById("sg-signer").scrollIntoView({ behavior: "smooth", block: "start" }) }));
+    requestAnimationFrame(() => {
+      const f = document.getElementById("sg-signer");
+      if (!f || !("IntersectionObserver" in window)) return;
+      if (obs) obs.disconnect();
+      obs = new IntersectionObserver(es => b.classList.toggle("cache", es[0].isIntersecting), { threshold: 0.1 });
+      obs.observe(f);
+    });
+    return b;
+  }
+
   let pad = null, nomVal = "", accord = false, avant = false;
 
   function rendre(garderPad) {
@@ -99,6 +168,7 @@
     show(
       el("h1", { class: "sg-h1", text: "Votre devis n° " + DV.numero }),
       el("p", { class: "sg-sub", text: "Émis le " + DV.date + " · valable jusqu'au " + DV.validite + " · " + DV.entreprise.nom + ", climatisation réversible" }),
+      presentation(),
       el("section", { class: "sg-card sg-client" }, el("span", { text: "Client" }), el("b", { text: DV.client.nom }), DV.client.adresse ? el("div", { text: DV.client.adresse }) : null),
       plusieurs ? el("p", { class: "sg-info", text: "Deux options vous sont proposées : choisissez celle que vous retenez." }) : null,
       DV.options.map(carteOption),
@@ -108,7 +178,8 @@
         el("p", { text: "TVA non applicable, art. 293 B du CGI. Règlement : acompte de 30 % à la signature, solde le jour de la mise en service (virement, chèque, espèces ou carte). Pose sous 2 à 3 semaines après réception de l'acompte. Pose garantie 2 ans, matériel garanti par le fabricant." + (DV.copro ? " Sous réserve de l'accord de la copropriété pour les groupes extérieurs." : "") }),
         el("details", { class: "sg-det" }, el("summary", { text: "Droit de rétractation (14 jours)" }),
           el("p", { text: "Vous disposez de 14 jours à compter de la signature pour vous rétracter, sans avoir à donner de motif. Le plus simple : envoyez un e-mail à " + DV.entreprise.mail + " (une phrase claire suffit, par exemple « Je me rétracte du devis n° " + DV.numero + " »). Vous pouvez aussi écrire à " + DV.entreprise.forme + " " + DV.entreprise.nom + ", " + DV.entreprise.adresse + ". Nous vous remboursons tous les paiements reçus au plus tard 14 jours après en avoir été informés. Si vous demandez que les travaux commencent avant la fin de ce délai, vous paierez un montant proportionnel au travail déjà réalisé si vous vous rétractez ensuite. Le formulaire type de rétractation est à la fin du devis PDF joint au mail." }))),
-      el("section", { class: "sg-card sg-form" },
+      barreSigner(),
+      el("section", { id: "sg-signer", class: "sg-card sg-form" },
         el("h2", { text: "Signer" + (plusieurs ? " l'option choisie" : " le devis") }),
         el("label", { class: "sg-l", for: "sg-nom", text: "Vos nom et prénom" }),
         el("input", { id: "sg-nom", class: "sg-input", autocomplete: "name", maxlength: "80", value: nomVal, oninput: e => { nomVal = e.target.value; } }),

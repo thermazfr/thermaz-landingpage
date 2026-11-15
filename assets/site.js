@@ -123,14 +123,15 @@ const THERMAZ = {
       if (g === "granted") clarity(); else if (typeof window.clarity === "function") window.clarity("consent", false);
       track("consent_" + v);
     };
-    window.thermazCookies = () => { const b = document.querySelector(".consent"); if (b) b.hidden = false; else show(); };
+    window.thermazCookies = () => { const b = document.querySelector(".consent"); if (b) { b.hidden = false; document.body.classList.add("ck-open"); } else show(); };
     document.addEventListener("click", e => { if (e.target.closest("[data-cookies-reset]")) window.thermazCookies(); });
     function show() {
       const b = document.createElement("div");
       b.className = "consent"; b.setAttribute("role", "dialog"); b.setAttribute("aria-label", "Cookies de mesure");
       b.innerHTML = '<p><span class="c-long">Cookies de mesure (Google, Microsoft Clarity), seulement si vous acceptez.</span><span class="c-short">Cookies de mesure</span> <a href="mentions-legales.html#cookies">Détails</a></p><div class="consent-btns"><button type="button" class="btn btn-line btn-sm" data-c="denied">Refuser</button><button type="button" class="btn btn-ink btn-sm" data-c="granted">Accepter</button></div>';
-      b.addEventListener("click", e => { const btn = e.target.closest("[data-c]"); if (!btn) return; set(btn.dataset.c); b.hidden = true; });
+      b.addEventListener("click", e => { const btn = e.target.closest("[data-c]"); if (!btn) return; set(btn.dataset.c); b.hidden = true; document.body.classList.remove("ck-open"); });
       document.body.appendChild(b);
+      document.body.classList.add("ck-open");
     }
     // Le bandeau attend le 2e défilement (ou 15 s) pour ne pas gêner le haut de page ; rien n'est mesuré avant l'accord.
     // Un « défilement » = une série d'événements scroll rapprochés ; une pause de plus de 600 ms en commence un nouveau.

@@ -53,6 +53,39 @@ details.sg-det summary{cursor:pointer;color:var(--fg);font-weight:600}
 .sg-ftr a{color:inherit}
 @media (max-width:420px){.sg-tel{font-size:15px}.logo small{display:none}}
 
+/* Présentation en carrousel (photos de chantiers, avis Google) + bouton Signer fixe */
+.sg-pres{margin:0 0 16px}
+.sg-car{position:relative}
+.sg-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;border-radius:var(--r);border:1px solid var(--line);background:var(--surface)}
+.sg-track::-webkit-scrollbar{display:none}
+.sg-slide{flex:0 0 100%;scroll-snap-align:start;box-sizing:border-box;height:380px;overflow:hidden;position:relative}
+.sg-s1 img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 65%}
+.sg-s1-txt{position:absolute;left:0;right:0;bottom:0;padding:60px 16px 16px;background:linear-gradient(transparent,rgba(9,20,32,.88));color:#fff;display:grid;gap:4px}
+.sg-s1-txt b{font-size:26px;letter-spacing:-.02em}
+.sg-s1-txt span{font-size:15px}
+.sg-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.sg-badges span{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:4px 10px;font-size:13px;font-weight:700}
+.sg-s2,.sg-s3{padding:14px}
+.sg-s-t{display:block;font-size:17px;margin:0 0 10px}
+.sg-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sg-grid figure{margin:0}
+.sg-grid img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r-sm);display:block}
+.sg-grid figcaption{font-size:12px;color:var(--muted);margin-top:3px}
+.sg-s3 blockquote{margin:0 0 10px;padding:10px 12px;background:var(--alt);border-radius:var(--r-sm)}
+.sg-s3 blockquote p{margin:0 0 4px;font-size:14px}
+.sg-s3 cite{font-style:normal;font-size:12.5px;color:var(--muted)}
+.sg-s3 cite::first-letter{color:#E8A317}
+.sg-s3 a{font-size:14px;font-weight:700;color:var(--cold)}
+.sg-arr{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;border:0;background:rgba(9,20,32,.55);color:#fff;font-size:24px;line-height:1;cursor:pointer;display:grid;place-items:center}
+.sg-arr-g{left:8px}.sg-arr-d{right:8px}
+.sg-dots{display:flex;justify-content:center;gap:6px;margin-top:8px}
+.sg-dots button{width:8px;height:8px;border-radius:999px;border:0;padding:0;background:var(--line);cursor:pointer;transition:width .2s}
+.sg-dots button.on{width:24px;background:var(--cold)}
+.sg-sticky{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 35%);transition:transform .25s}
+.sg-sticky .sg-btn{max-width:728px;margin:0 auto;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.sg-sticky.cache{transform:translateY(120%)}
+main.sg-wrap:has(.sg-sticky){padding-bottom:96px}
+
 /* Envoi de photos (photos.html) */
 .ph-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 label.ph-bouton{text-align:center;margin:0 0 6px}
