@@ -85,6 +85,7 @@
   const state = { view: "today", data: null, today: null, q: "", cq: "", statuts: [], current: null, pend: null, nonce: "" };
   const FLOW = ["Nouveau", "Rappelé", "Visite prévue", "Devis envoyé", "Signé", "Acompte reçu", "Posé", "Soldé"];
   const SIDE = ["Perdu", "Hors cible"];
+  const RAISONS_PERTE = ["Trop cher", "A choisi un autre artisan", "Projet repoussé", "Plus de réponse", "Hors zone ou pas faisable", "Autre"];
   const COURT = { "Visite prévue": "Visite", "Devis envoyé": "Devis", "Acompte reçu": "Acompte" };
   const GAGNES = ["Signé", "Acompte reçu", "Posé", "Soldé"];
   const GROUPES = [
@@ -460,11 +461,19 @@
     if (mo !== String(r.montantNum || "")) f.montant = mo;
     if (no) f.noteAjout = no;
     if (!Object.keys(f).length) { $("#fiche").close(); return; }
-    const res = await api("update", { row: r.row, nom: r.nom, fields: f });
-    if (!res.ok) return msg("m-fiche", err(res));
-    tracer("Fiche modifiée", (r.nom || "?") + (f.statut ? " → " + f.statut : "") + (f.noteAjout ? " · " + f.noteAjout.slice(0, 80) : ""), r.row);
-    $("#fiche").close(); toast("Enregistré dans le CRM");
-    await refresh(true);
+    const enregistrer = async f => {
+      const res = await api("update", { row: r.row, nom: r.nom, fields: f });
+      if (!res.ok) return msg("m-fiche", err(res));
+      tracer("Fiche modifiée", (r.nom || "?") + (f.statut ? " → " + f.statut : "") + (f.noteAjout ? " · " + f.noteAjout.slice(0, 80) : ""), r.row);
+      $("#fiche").close(); toast("Enregistré dans le CRM");
+      await refresh(true);
+    };
+    // Devis perdu : on note pourquoi (lu par le rapport du lundi pour savoir si le problème vient du prix, de l'offre ou du suivi).
+    if (f.statut === "Perdu") {
+      const raison = t => enregistrer({ ...f, noteAjout: "Raison de la perte : " + t + (no ? " · " + no : "") });
+      return choisir("Pourquoi c'est perdu ?", r.nom || "", RAISONS_PERTE.map(t => ({ t, fn: () => raison(t) })));
+    }
+    await enregistrer(f);
   }));
 
   /* ----- Nouvelle demande ----- */

@@ -631,6 +631,29 @@ legend{font-weight:700;font-size:15.5px;margin-bottom:10px;padding:0}
 .rappel-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 /* Pages Ads : note sous les boutons, barre du bas masquée tant que le haut de page est visible */
 .hero-note{margin:12px 0 0;max-width:560px;font-size:14px;line-height:1.45;color:var(--on-band-muted)}
+/* Haut de page « confiance d'abord » : coches, marques posées, bandeau garantie, puis le best-seller juste en dessous */
+.btn-white{background:#fff;color:#0E1E2E}
+.btn-white:hover{background:#E6ECF2}
+.h-checks{display:flex;flex-wrap:wrap;gap:6px 18px;list-style:none;margin:14px 0 0;padding:0;font-size:15px;font-weight:600;color:var(--on-band)}
+.h-checks li::before{content:"✓";margin-right:7px;font-weight:800}
+.h-marques{margin-top:20px}
+.h-marques p{margin:0 0 8px;font-size:14px;color:var(--on-band-muted)}
+.h-marques ul{display:flex;flex-wrap:wrap;gap:6px 22px;list-style:none;margin:0;padding:0}
+.h-marques li{font-weight:800;font-size:16px;letter-spacing:.04em;text-transform:uppercase;color:var(--on-band);opacity:.92}
+.h-hero .h-checks,.h-hero .h-marques li{color:#fff}
+.h-hero .h-marques p{color:rgba(255,255,255,.78)}
+.trust-band{background:var(--surface);border-bottom:1px solid var(--line);padding:18px 0}
+.trust-band .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:10px 30px}
+.tb-main{display:flex;align-items:center;gap:12px;margin:0;font-weight:800;font-size:clamp(16px,2.2vw,19px);letter-spacing:.07em;text-transform:uppercase;color:var(--fg)}
+.tb-main svg{width:30px;height:30px;flex:none;color:var(--cold)}
+.tb-list{display:flex;flex-wrap:wrap;gap:6px 20px;list-style:none;margin:0;padding:0;font-size:15px;color:var(--muted)}
+.tb-list li::before{content:"✓";color:var(--cold);font-weight:800;margin-right:6px}
+.bs-strip{padding:18px 0 0}
+.bs-line{margin:0;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--alt);font-size:16.5px;font-weight:600;line-height:1.45}
+.bs-line b{color:var(--warm-deep);white-space:nowrap}
+.bs-line span{display:block;margin-top:2px;font-size:14px;font-weight:400;color:var(--muted)}
+.bs-line a{display:inline-block;margin-top:6px;font-size:14.5px;font-weight:700;color:var(--cold)}
+@media (max-width:599px){.trust-band .wrap{gap:8px}.tb-list{font-size:14px;gap:4px 14px}.h-marques li{font-size:14.5px}}
 /* Prix par nombre de pièces, dans le haut de page */
 .h-prix{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:12px 0 0;padding:0}
 .h-prix a{display:flex;flex-direction:column;gap:1px;padding:7px 12px;border-radius:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.24);color:var(--on-band-muted);font-size:13px;line-height:1.2;text-decoration:none}
