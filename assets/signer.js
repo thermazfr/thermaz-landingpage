@@ -63,17 +63,18 @@
   }
 
   const PHOTOS = [
-    ["assets/hero/murale-altech-pool-house-640.jpg", "Murale Altech dans un pool house"],
+    ["assets/hero/groupe-altech-facade-640.jpg", "Groupe Altech en façade"],
     ["assets/hero/groupe-panasonic-toit-terrasse-640.jpg", "Groupe Panasonic sur toit-terrasse"],
     ["assets/hero/murale-bosch-sejour-640.jpg", "Murale Bosch dans un séjour"],
-    ["assets/hero/groupe-altech-facade-640.jpg", "Groupe Altech en façade"]
+    ["assets/hero/console-daikin.jpg", "Console Daikin dans un salon"]
   ];
 
   function presentation() {
     const etoiles = AVIS ? "★ " + String(AVIS.rating).replace(".", ",") + (Number.isInteger(AVIS.rating) ? ",0" : "") + " · " + AVIS.count + " avis Google" : "Avis Google 5 étoiles";
     const slides = [
       el("div", { class: "sg-slide sg-s1" },
-        el("img", { src: "assets/hero/pose-en-cours-altech-goulotte.jpg", alt: "Pose de climatisation en cours par Thermaz", loading: "eager" }),
+        // Chantier terminé seulement (Andy 19/11 : pas de photo de pose en cours avec goulotte apparente).
+        el("img", { src: "assets/hero/murale-altech-pool-house-1600.jpg", alt: "Climatisation murale Altech posée par Thermaz dans un pool house", loading: "eager" }),
         el("div", { class: "sg-s1-txt" },
           el("b", { text: "Thermaz" }),
           el("span", { text: "Andy, artisan climaticien à Salon-de-Provence" }),
