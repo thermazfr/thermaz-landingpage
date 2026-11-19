@@ -300,6 +300,6 @@
   fetch("data/fiches.json").then(r => r.json()).then(d => { FICHES = d; if (CAT.length) render(); }).catch(() => {});
   fetch("data/catalogue.json").then(r => r.json()).then(d => { CAT = d; render(); }).catch(() => {
     $("#c-form").hidden = false;
-    $("#c-err").textContent = "Le catalogue n'a pas pu se charger. Appelez le 06 51 10 64 35, je vous donne le prix au téléphone.";
+    $("#c-err").textContent = "Le catalogue n'a pas pu se charger. Appelez-moi au 06 51 10 64 35, je vous donne le prix au téléphone.";
   });
 })();

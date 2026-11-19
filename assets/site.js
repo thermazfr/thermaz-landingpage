@@ -156,7 +156,7 @@ const THERMAZ = {
     // Bas du menu mobile : appel et devis, repris des boutons de l'en-tête
     const cta = document.createElement("div"), tel = $(".hdr-tel"), dv = $(".hdr-cta .btn");
     cta.className = "nav-cta";
-    if (tel) { const a = tel.cloneNode(true); a.className = "btn btn-line"; a.textContent = "Appeler le " + tel.textContent.trim(); cta.appendChild(a); }
+    if (tel) { const a = tel.cloneNode(true); a.className = "btn btn-line"; a.textContent = "Appeler Andy au " + tel.textContent.trim(); cta.appendChild(a); }
     if (dv) { const a = dv.cloneNode(true); a.classList.remove("btn-sm"); cta.appendChild(a); }
     nav.appendChild(cta);
     burger.addEventListener("click", () => menu(!hdr.classList.contains("menu-open")));
@@ -286,7 +286,7 @@ const THERMAZ = {
       return true;
     } catch {
       statusEl.className = "status err";
-      statusEl.textContent = "L'envoi n'a pas fonctionné. Appelez le " + THERMAZ.phone + ", c'est le plus rapide.";
+      statusEl.textContent = "L'envoi n'a pas fonctionné. Appelez Andy au " + THERMAZ.phone + ", c'est le plus rapide.";
       return false;
     }
   }
@@ -503,7 +503,7 @@ const THERMAZ = {
   if (qwBox) {
     if (qwBox.dataset.qw) devisRapide(qwBox, JSON.parse(qwBox.dataset.qw));
     else fetch(qwBox.dataset.qwSrc || "data/devis-rapide.json").then(r => r.json()).then(C => devisRapide(qwBox, C)).catch(() => {
-      $(".qw-content", qwBox).innerHTML = '<p>Le formulaire n\'a pas pu se charger. Appelez le <a href="tel:+33651106435">06 51 10 64 35</a>.</p>';
+      $(".qw-content", qwBox).innerHTML = '<p>Le formulaire n\'a pas pu se charger. Appelez Andy au <a href="tel:+33651106435">06 51 10 64 35</a>.</p>';
     });
   }
   function devisRapide(qw, C) {
@@ -697,7 +697,7 @@ const THERMAZ = {
       $$('input[name="zm-n"]', zm).forEach(r => r.addEventListener("change", () => { n = +r.value; tip.dataset.c = ""; if (cur) show(cur); }));
       map.addEventListener("click", e => { const p = e.target.closest(".zm-c"); if (p) show(p.dataset.commune); });
       map.addEventListener("keydown", e => { const p = e.target.closest(".zm-c"); if (p && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); show(p.dataset.commune); } });
-    }).catch(() => { $(".zm-map", zm).innerHTML = '<p class="hint">La carte n\'a pas pu se charger. Appelez le <a href="tel:+33651106435">06 51 10 64 35</a> pour le prix du déplacement.</p>'; });
+    }).catch(() => { $(".zm-map", zm).innerHTML = '<p class="hint">La carte n\'a pas pu se charger. Appelez Andy au <a href="tel:+33651106435">06 51 10 64 35</a> pour le prix du déplacement.</p>'; });
   }
 
   /* ---- Page de remerciement personnalisée ---- */
