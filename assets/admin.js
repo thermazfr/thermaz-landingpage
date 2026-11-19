@@ -621,16 +621,32 @@
     const l = [];
     if (dv.liaisons > 0) l.push({ libelle: "Liaisons de 5 à 10 m (" + dv.liaisons + (dv.liaisons > 1 ? " unités)" : " unité)"), montant: dv.liaisons * SUP_UNITE });
     if (dv.pompe > 0) l.push({ libelle: "Pompe de relevage des condensats" + (dv.pompe > 1 ? " (× " + dv.pompe + ")" : ""), montant: dv.pompe * SUP_UNITE });
-    if (dv.depose > 0) l.push({ libelle: "Dépose de l'ancienne climatisation", montant: dv.depose });
+    if (dv.depose > 0) l.push({ libelle: "Dépose de l'ancienne climatisation", detail: "Récupération du fluide frigorigène, démontage de l'unité intérieure et du groupe extérieur, évacuation de l'ancien matériel en filière de recyclage", montant: dv.depose });
     if (dv.hauteur > 0) l.push({ libelle: "Travail en hauteur / nacelle", montant: dv.hauteur });
     if (dv.autreL.trim() && dv.autreM > 0) l.push({ libelle: dv.autreL.trim(), montant: dv.autreM });
     return l;
   }
+  const totalSup = () => supplementsDevis().reduce((x, y) => x + y.montant, 0);
+  // « Mon prix » : le total tout compris tapé par Andy. Les suppléments en sont déduits et le reste est
+  // réparti sur les systèmes (au prorata des prix du site), pour que le total du devis tombe juste.
+  function systemesAuPrix() {
+    const reste = dv.monPrix - totalSup(), n = dv.systemes.length;
+    const cat = dv.systemes.map(s => prixSys(dv.marque, dv.gamme, s) || 0), tot = cat.reduce((a, b) => a + b, 0);
+    let pris = 0;
+    return dv.systemes.map((s, i) => {
+      const p = i === n - 1 ? reste - pris : Math.round(reste * (tot ? cat[i] / tot : 1 / n));
+      pris += p;
+      return { u: s.u, kw: s.kw, prix: p };
+    });
+  }
   function totalOption(gamme) {
     if (!gamme) return null;
+    if (dv.monPrix > 0 && gamme === dv.gamme) {
+      return systemesAuPrix().some(s => !(s.prix > 0)) ? { err: "Ton prix doit dépasser les suppléments (" + euro(totalSup()) + ")." } : { t: dv.monPrix, perso: true };
+    }
     let t = 0;
     for (const s of dv.systemes) { const p = prixSys(dv.marque, gamme, s); if (p === null) return { err: "Pas de prix sur le site pour " + dv.marque + " " + gamme + " " + s.kw }; t += p; }
-    return { t: t + supplementsDevis().reduce((x, y) => x + y.montant, 0) };
+    return { t: t + totalSup() };
   }
   function kwDefaut(u) { const l = kwPossibles(dv.marque, u); return l.find(k => (u === 1 ? k === "3,5" : u === 2 ? k === "2 kW + 2 kW" : false)) || l[0] || ""; }
   function majGammes() {
@@ -646,10 +662,12 @@
     const l = (state.data || []).filter(r => !SIDE.includes(r.statut) && r.statut !== "Soldé" && r.nom && norm(r.nom).split(/\s+/).some(m => m.length > 2 && t.includes(m)));
     return l.length ? l[l.length - 1] : null;
   }
+  // Demande notée « Remplacement » dans le CRM : la case est cochée d'office, Andy peut la décocher.
+  const estRemplacement = r => !!r && /remplacement/i.test(r.prestation || "");
   async function ouvrirDevis(r) {
     await chargerCatalogue();
     if (!CAT.length) return toast("Catalogue du site introuvable.");
-    Object.assign(dv, { row: r ? r.row : null, civilite: "", marque: "Daikin", gamme: "", gamme2: "aucune", systemes: [], liaisons: 0, pompe: 0, depose: 0, hauteur: 0, autreL: "", autreM: 0, copro: false, remarques: "", email: "", fait: null });
+    Object.assign(dv, { row: r ? r.row : null, civilite: "", marque: "Daikin", gamme: "", gamme2: "aucune", systemes: [], liaisons: 0, pompe: 0, depose: 0, hauteur: 0, autreL: "", autreM: 0, copro: false, monPrix: 0, acompte: true, deuxFois: false, remplacement: estRemplacement(r), remarques: "", email: "", fait: null });
     dv.systemes = [{ u: 1, kw: kwDefaut(1) }];
     $("#dv-titre").textContent = "Préparer le devis";
     rendreDevis();
@@ -664,7 +682,7 @@
     const champ = (lab, val, onin, attrs) => el("label", {}, lab, el("input", { value: val || "", inputmode: "decimal", ...(attrs || {}), oninput: e => { onin(e.target.value); majTotaux(); } }));
     const clients = (state.data || []).filter(r => !SIDE.includes(r.statut) && r.statut !== "Soldé").slice().reverse();
     box.replaceChildren(...[
-      el("label", {}, "Client", sel([["", "Choisir…"], ...clients.map(r => [r.row, r.nom.replace(/\([^)]*\)?/g, " ").replace(/\s+/g, " ").trim() + (r.commune ? " · " + r.commune : "")])], dv.row || "", v => { dv.row = Number(v) || null; rendreDevis(); }, "Client")),
+      el("label", {}, "Client", sel([["", "Choisir…"], ...clients.map(r => [r.row, r.nom.replace(/\([^)]*\)?/g, " ").replace(/\s+/g, " ").trim() + (r.commune ? " · " + r.commune : "")])], dv.row || "", v => { dv.row = Number(v) || null; dv.remplacement = estRemplacement(clientDevis()); rendreDevis(); }, "Client")),
       clientDevis() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clientDevis().email || "")
         ? el("label", {}, "E-mail du client (pas sur la fiche : pour lui envoyer le devis en 1 clic)", el("input", { type: "email", inputmode: "email", autocomplete: "off", value: dv.email || "", oninput: e => { dv.email = e.target.value.trim(); } }))
         : null,
@@ -691,6 +709,11 @@
         champ("Autre supplément", dv.autreL, v => dv.autreL = v, { inputmode: "text" }),
         champ("Montant (€)", dv.autreM || "", v => dv.autreM = nombre(v))),
       el("label", { class: "ad-check" }, el("input", { type: "checkbox", checked: dv.copro || null, onchange: e => { dv.copro = e.target.checked; } }), "Copropriété (accord du syndic à demander)"),
+      el("label", { class: "ad-check" }, el("input", { type: "checkbox", checked: dv.remplacement || null, onchange: e => { dv.remplacement = e.target.checked; } }), "Remplacement : on garde les liaisons et goulottes en place"),
+      el("h3", { class: "ad-h2", text: "Prix et règlement" }),
+      champ("Mon prix total TTC, tout compris (vide = prix du site)", dv.monPrix || "", v => dv.monPrix = nombre(v)),
+      el("label", { class: "ad-check" }, el("input", { type: "checkbox", checked: dv.acompte || null, onchange: e => { dv.acompte = e.target.checked; } }), "Acompte de 30 % écrit sur le devis"),
+      el("label", { class: "ad-check" }, el("input", { type: "checkbox", checked: dv.deuxFois || null, onchange: e => { dv.deuxFois = e.target.checked; } }), "Proposer dans le mail de régler en deux fois"),
       el("label", {}, "Remarque pour le client (facultatif)", el("textarea", { rows: "2", oninput: e => { dv.remarques = e.target.value; } }, dv.remarques)),
       el("div", { class: "ad-totaux", id: "dv-tot" }),
       el("p", { class: "ad-msg", id: "m-devis" }),
@@ -701,10 +724,12 @@
   function majTotaux() {
     const t = $("#dv-tot"); if (!t) return;
     const lignes = [];
-    for (const [i, g] of [[1, dv.gamme], [2, dv.gamme2 === "aucune" ? "" : dv.gamme2]]) {
+    const perso = dv.monPrix > 0;
+    for (const [i, g] of [[1, dv.gamme], [2, perso || dv.gamme2 === "aucune" ? "" : dv.gamme2]]) {
       const r = totalOption(g); if (!r) continue;
-      lignes.push(r.err ? el("div", { class: "ad-total err", text: r.err }) : el("div", { class: "ad-total" }, el("span", { text: "Option " + i + " · " + dv.marque + " " + g }), el("span", { text: euro(r.t) })));
+      lignes.push(r.err ? el("div", { class: "ad-total err", text: r.err }) : el("div", { class: "ad-total" }, el("span", { text: (r.perso ? "Mon prix · " : "Option " + i + " · ") + dv.marque + " " + g }), el("span", { text: euro(r.t) })));
     }
+    if (perso && dv.gamme2 !== "aucune") lignes.push(el("p", { class: "ad-muted", text: "Avec ton propre prix, le devis part avec une seule option (" + dv.gamme + ")." }));
     const sup = supplementsDevis();
     if (sup.length) lignes.push(el("p", { class: "ad-muted", text: "Suppléments compris : " + sup.map(s => s.libelle + " " + euro(s.montant)).join(" · ") }));
     t.replaceChildren(...lignes);
@@ -714,11 +739,14 @@
     if (!r) return msg("m-devis", "Choisis le client.");
     if (!dv.gamme) return msg("m-devis", "Il manque une gamme avec un prix sur le site.");
     if (dv.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(dv.email)) return msg("m-devis", "L'adresse e-mail n'est pas valide.");
+    const perso = dv.monPrix > 0, t1 = totalOption(dv.gamme);
+    if (t1 && t1.err) return msg("m-devis", t1.err);
     busy(btn, async () => {
       msg("m-devis", "Préparation du devis…", true);
       const res = await api("devis", {
-        row: r.row, nom: r.nom, civilite: dv.civilite, marque: dv.marque, gamme: dv.gamme, gamme2: dv.gamme2 === "aucune" ? "" : dv.gamme2,
-        systemes: dv.systemes.map(s => ({ u: s.u, kw: s.kw })), supplements: supplementsDevis(), remarques: dv.remarques.trim(), copro: dv.copro, email: dv.email || ""
+        row: r.row, nom: r.nom, civilite: dv.civilite, marque: dv.marque, gamme: dv.gamme, gamme2: perso || dv.gamme2 === "aucune" ? "" : dv.gamme2,
+        systemes: perso ? systemesAuPrix() : dv.systemes.map(s => ({ u: s.u, kw: s.kw })), supplements: supplementsDevis(), remarques: dv.remarques.trim(), copro: dv.copro, email: dv.email || "",
+        sansAcompte: !dv.acompte, deuxFois: dv.deuxFois, remplacement: dv.remplacement
       });
       if (!res.ok) return msg("m-devis", err(res));
       dv.fait = { ...res, nom: r.nom, row: r.row };
@@ -740,7 +768,7 @@
       f.pdf && /^https:\/\/(drive|docs)\.google\.com\//.test(f.pdf) ? el("a", { class: "ad-btn", href: f.pdf, target: "_blank", rel: "noopener noreferrer" }, "Voir le PDF") : null,
       f.brouillon && !f.envoye ? el("a", { class: "ad-btn", href: "https://mail.google.com/mail/?authuser=thermaz.fr@gmail.com#drafts", target: "_blank", rel: "noopener noreferrer" }, icon("mail", 16), "Modifier le mail dans Gmail") : null,
       t ? el("a", { class: "ad-btn" + (f.brouillon ? "" : " ad-btn--main"), href: "sms:" + t + "?&body=" + encodeURIComponent(f.sms) }, icon("chat", 16), "Envoyer le SMS au client") : null,
-      f.lien ? el("p", { class: "ad-muted", text: "Le mail et le SMS contiennent le lien pour signer en ligne. Quand il signe : fiche en « Signé », alerte Telegram, mail d'acompte avec 3 dates de pose prêt en brouillon." }) : null,
+      f.lien ? el("p", { class: "ad-muted", text: "Le mail et le SMS contiennent le lien pour signer en ligne. Quand il signe : fiche en « Signé », alerte Telegram, mail " + (dv.acompte ? "d'acompte " : "") + "avec 3 dates de pose prêt en brouillon." }) : null,
       f.lien ? el("button", { type: "button", class: "ad-btn", text: "Copier le lien de signature", onclick: () => navigator.clipboard.writeText(f.lien).then(() => toast("Lien copié"), () => toast(f.lien)) }) : null,
       el("button", { type: "button", class: "ad-btn", text: "Fermer", onclick: () => $("#devis").close() })
     ].filter(Boolean));

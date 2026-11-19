@@ -136,7 +136,7 @@
           : el("h2", { text: titre }),
         el("div", { class: "sg-total", text: euro(o.total) })),
       lignes,
-      el("p", { class: "sg-acompte", text: "Total TTC, fourni, posé et mis en service. Acompte de 30 % à la signature : " + euro(o.total * DV.acompte) + " · solde le jour de la mise en service : " + euro(o.total * (1 - DV.acompte)) + "." }));
+      el("p", { class: "sg-acompte", text: "Total TTC, fourni, posé et mis en service." + (DV.acompte ? " Acompte de 30 % à la signature : " + euro(o.total * DV.acompte) + " · solde le jour de la mise en service : " + euro(o.total * (1 - DV.acompte)) + "." : "") }));
     if (plusieurs) card.addEventListener("click", e => { if (e.target.tagName !== "INPUT" && choix !== n) { choix = n; rendre(true); } });
     return card;
   }
@@ -173,9 +173,12 @@
       plusieurs ? el("p", { class: "sg-info", text: "Deux options vous sont proposées : choisissez celle que vous retenez." }) : null,
       DV.options.map(carteOption),
       el("section", { class: "sg-card sg-info" },
-        el("p", {}, el("b", { text: "Compris dans le prix : " }), "matériel neuf (fluide R32), supports et fixations, liaisons frigorifiques jusqu'à 5 m par unité, goulottes, câbles de liaison, évacuation des condensats, raccordement électrique de la climatisation, tirage au vide, contrôle d'étanchéité, mise en service et essais, explication de l'utilisation."),
+        // Même texte que comprisDevis() dans le script (Code.gs) : changer les deux.
+        el("p", {}, el("b", { text: "Compris dans le prix : " }), DV.remplacement
+          ? "matériel neuf (fluide R32), fixation des nouvelles unités, raccordement aux liaisons frigorifiques, au câblage et à l'évacuation des condensats déjà en place, raccordement électrique de la climatisation, tirage au vide, contrôle d'étanchéité, mise en service et essais, explication de l'utilisation."
+          : "matériel neuf (fluide R32), supports et fixations, liaisons frigorifiques jusqu'à 5 m par unité, goulottes, câbles de liaison, évacuation des condensats, raccordement électrique de la climatisation, tirage au vide, contrôle d'étanchéité, mise en service et essais, explication de l'utilisation."),
         DV.remarques ? el("p", { text: DV.remarques }) : null,
-        el("p", { text: "TVA non applicable, art. 293 B du CGI. Règlement : acompte de 30 % à la signature, solde le jour de la mise en service (virement, chèque, espèces ou carte). Pose sous 2 à 3 semaines après réception de l'acompte. Pose garantie 2 ans, matériel garanti par le fabricant." + (DV.copro ? " Sous réserve de l'accord de la copropriété pour les groupes extérieurs." : "") }),
+        el("p", { text: "TVA non applicable, art. 293 B du CGI. " + (DV.acompte ? "Règlement : acompte de 30 % à la signature, solde le jour de la mise en service (virement, chèque, espèces ou carte). Pose sous 2 à 3 semaines après réception de l'acompte." : "Règlement par virement, chèque, espèces ou carte. Pose sous 2 à 3 semaines après la signature.") + " Pose garantie 2 ans, matériel garanti par le fabricant." + (DV.copro ? " Sous réserve de l'accord de la copropriété pour les groupes extérieurs." : "") }),
         el("details", { class: "sg-det" }, el("summary", { text: "Droit de rétractation (14 jours)" }),
           el("p", { text: "Vous disposez de 14 jours à compter de la signature pour vous rétracter, sans avoir à donner de motif. Le plus simple : envoyez un e-mail à " + DV.entreprise.mail + " (une phrase claire suffit, par exemple « Je me rétracte du devis n° " + DV.numero + " »). Vous pouvez aussi écrire à " + DV.entreprise.forme + " " + DV.entreprise.nom + ", " + DV.entreprise.adresse + ". Nous vous remboursons tous les paiements reçus au plus tard 14 jours après en avoir été informés. Si vous demandez que les travaux commencent avant la fin de ce délai, vous paierez un montant proportionnel au travail déjà réalisé si vous vous rétractez ensuite. Le formulaire type de rétractation est à la fin du devis PDF joint au mail." }))),
       barreSigner(),
@@ -219,7 +222,7 @@
         el("h1", { text: "Merci, votre devis est signé !" }),
         el("p", { text: "Devis n° " + r.numero + " signé le " + r.le + " · " + euro(r.total) + " TTC." }),
         el("p", { text: "Andy vous écrit très vite par mail avec la copie signée et ses prochaines dates de pose." + (r.travauxAvant ? "" : " Comme vous n'avez pas demandé de travaux avant, la pose aura lieu après le délai de rétractation de 14 jours.") })),
-      r.iban ? ibanBloc(r.acompte, r.numero) : el("p", { class: "sg-info", text: "Acompte de 30 % : " + euro(r.acompte) + ". Andy vous indique comment le régler." }),
+      r.iban ? ibanBloc(r.acompte, r.numero) : r.acompte ? el("p", { class: "sg-info", text: "Acompte de 30 % : " + euro(r.acompte) + ". Andy vous indique comment le régler." }) : null,
       el("p", { class: "sg-info", text: "Une question ? Appelez Andy au " + TEL + "." }));
   }
 
@@ -290,10 +293,15 @@
       ]
     };
     if (deux) base.options.push({ marque: "Daikin", gamme: "Sensira", total: 5209, lignes: [{ titre: "Mono-split Daikin Sensira", detail: "1 unité intérieure murale 3,5 kW + 1 groupe extérieur assorti", prix: 1890 }, { titre: "Bi-split Daikin Sensira", detail: "1 groupe extérieur + 2 unités intérieures murales (2 kW + 2 kW)", prix: 3319 }] });
+    // ?demo=sans : devis sans acompte (case décochée dans l'espace admin), avec une dépose détaillée.
+    const sans = q.get("demo") === "sans";
+    if (sans) Object.assign(base, { acompte: 0, sansAcompte: true, remplacement: true, remarques: "", options: [{ marque: "Daikin", gamme: "Sensira", total: 1284, lignes: [
+      { titre: "Mono-split Daikin Sensira", detail: "1 unité intérieure murale 2,5 kW + 1 groupe extérieur assorti", prix: 1195 },
+      { titre: "Dépose de l'ancienne climatisation", detail: "Récupération du fluide frigorigène, démontage de l'unité intérieure et du groupe extérieur, évacuation de l'ancien matériel en filière de recyclage", prix: 89 }] }] });
     return new Promise(res => setTimeout(() => {
       if (action === "devisPublic") return res(base);
       const o = base.options[(data.option || 1) - 1];
-      res({ ok: true, numero: base.numero, le: "07/11/2026 à 23:10", total: o.total, acompte: Math.round(o.total * 30) / 100, iban: "FR76 0000 0000 0000 0000 0000 000", travauxAvant: !!data.travauxAvant });
+      res({ ok: true, numero: base.numero, le: "07/11/2026 à 23:10", total: o.total, acompte: sans ? 0 : Math.round(o.total * 30) / 100, iban: sans ? "" : "FR76 0000 0000 0000 0000 0000 000", travauxAvant: !!data.travauxAvant });
     }, 300));
   }
 
