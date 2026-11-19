@@ -196,9 +196,10 @@ const THERMAZ = {
       const short = rating.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
       // Badge du haut de l'accueil : la note seule, à côté du logo Google et des étoiles
       if (el.dataset.rating === "note") { el.textContent = short; el.closest("a").setAttribute("aria-label", "Note Google : " + short + " sur 5, voir les avis"); return; }
-      // Page installation : la note et le nombre d'avis, toujours
-      if (el.dataset.rating === "note-avis") { el.textContent = count ? short + " · " + count + " avis" : short; el.closest("a").setAttribute("aria-label", "Note Google : " + short + " sur 5" + (count ? ", " + count + " avis" : "") + ", voir les avis"); return; }
-      if (el.dataset.rating === "avis") { el.textContent = short + "/5" + (count ? " · " + count + " avis Google" : " sur Google"); return; }
+      // Badge du haut des autres pages : la note, et le nombre d'avis seulement à partir de 30 (règle d'Andy, rappelée le 19/11)
+      const assez = count >= MIN_AVIS_AFFICHES;
+      if (el.dataset.rating === "note-avis") { el.textContent = assez ? short + " · " + count + " avis" : short; el.closest("a").setAttribute("aria-label", "Note Google : " + short + " sur 5" + (assez ? ", " + count + " avis" : "") + ", voir les avis"); return; }
+      if (el.dataset.rating === "avis") { el.textContent = short + "/5" + (assez ? " · " + count + " avis Google" : " sur Google"); return; }
       const note = rating.toLocaleString("fr-FR", { minimumFractionDigits: 1 }) + "/5";
       el.textContent = count >= MIN_AVIS_AFFICHES ? note + " · " + count + " avis Google" : note + " sur Google";
     });

@@ -70,7 +70,8 @@
   ];
 
   function presentation() {
-    const etoiles = AVIS ? "★ " + String(AVIS.rating).replace(".", ",") + (Number.isInteger(AVIS.rating) ? ",0" : "") + " · " + AVIS.count + " avis Google" : "Avis Google 5 étoiles";
+    // Le nombre d'avis ne s'affiche qu'à partir de 30 (même règle que sur le site) ; avant, la note seule.
+    const etoiles = AVIS ? "★ " + String(AVIS.rating).replace(".", ",") + (Number.isInteger(AVIS.rating) ? ",0" : "") + (AVIS.count >= 30 ? " · " + AVIS.count + " avis Google" : " sur Google") : "Avis Google 5 étoiles";
     const slides = [
       el("div", { class: "sg-slide sg-s1" },
         // Chantier terminé seulement (Andy 19/11 : pas de photo de pose en cours avec goulotte apparente).
