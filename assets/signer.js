@@ -79,7 +79,7 @@
         el("div", { class: "sg-s1-txt" },
           el("b", { text: "Thermaz" }),
           el("span", { text: "Andy, artisan climaticien à Salon-de-Provence" }),
-          el("div", { class: "sg-badges" }, [etoiles, "Prix affichés", "Pose garantie 2 ans"].map(t => el("span", { text: t }))))),
+          el("div", { class: "sg-badges" }, [etoiles, "Sans sous-traitance", "Pose garantie 2 ans"].map(t => el("span", { text: t }))))),
       el("div", { class: "sg-slide sg-s2" },
         el("b", { class: "sg-s-t", text: "Quelques chantiers" }),
         el("div", { class: "sg-grid" }, PHOTOS.map(([src, t]) => el("figure", {}, el("img", { src, alt: t, loading: "lazy" }), el("figcaption", { text: t }))))),
