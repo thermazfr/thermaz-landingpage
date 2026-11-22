@@ -281,6 +281,7 @@ const THERMAZ = {
       });
       statusEl.className = "status ok"; statusEl.textContent = "Demande envoyée. Je vous rappelle dans la journée.";
       track("generate_lead", { prestation: data.prestation || "", commune: data.commune || "", estimation: data.estimation || "" });
+      if (window.thermazVisite) window.thermazVisite("en");
       // Page de remerciement : sert aussi de page de conversion pour Google Ads
       store.set("thz_lead", JSON.stringify({ nom: (data.nom || "").split(" ")[0], telephone: data.telephone || "", prestation: data.prestation || "", estimation: data.estimation || "" }));
       setTimeout(() => { location.href = "merci.html"; }, 1200);
@@ -734,4 +735,50 @@ const THERMAZ = {
   $$("[data-offer-until]").forEach(el => {
     if (new Date() > new Date(el.dataset.offerUntil + "T23:59:59")) el.hidden = true;
   });
+
+  /* ---- Compteur de visites anonyme, sans cookie (22/11/2026) ----
+     Une ligne par page vue : la page, la provenance, téléphone ou ordinateur, et jusqu'où le visiteur est allé
+     (défilement, simulateur, demande, appel). Rien n'est gardé dans le navigateur, aucun nom, aucune adresse,
+     et aucun identifiant ne suit le visiteur d'une page à l'autre. Lu dans l'espace admin, écran « Visiteurs ». */
+  (function compteur() {
+    const URL_V = "https://script.google.com/macros/s/AKfycbxePxnHl8FiHMrCn6O8SJbn3LiGjTtBUezzQGw8p3IvoVlFAWyJTKAKblQ2iOuzql6H/exec";
+    const off = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.protocol === "file:" || navigator.webdriver ||
+      navigator.globalPrivacyControl || navigator.doNotTrack === "1" || /bot|crawl|spider|lighthouse|headless|preview/i.test(navigator.userAgent);
+    if (off) return;
+    const id = Math.random().toString(36).slice(2, 12) + Date.now().toString(36).slice(-4);
+    let ref = ""; try { ref = document.referrer ? new URL(document.referrer).hostname : ""; } catch {}
+    const nav = (performance.getEntriesByType && performance.getEntriesByType("navigation")[0] || {}).type || "navigate";
+    // Une « entrée » = une arrivée sur le site (pas un passage d'une page à l'autre, ni un rechargement).
+    const entree = ref !== location.hostname && nav === "navigate" ? 1 : 0;
+    const us = (q.get("utm_source") || "").toLowerCase();
+    const source = q.get("gclid") || q.get("gbraid") || q.get("wbraid") || /google-ads|adwords/.test(us) ? "Google Ads"
+      : us === "carte-voisin" ? "Carte voisin"
+      : /facebook|instagram|meta|tiktok/.test(us + " " + ref) ? "Réseaux sociaux"
+      : /(^|\.)google\./.test(ref) ? "Recherche Google"
+      : /bing\.|duckduckgo\.|qwant\.|ecosia\.|yahoo\.|brave\./.test(ref) ? "Autre moteur"
+      : !ref || ref === location.hostname ? "Accès direct" : "Autre site";
+    const S = { d: 0, sv: 0, st: 0, sn: 0, co: 0, en: 0, ap: 0, px: 0 };
+    let dernier = "";
+    function envoyer() {
+      const corps = JSON.stringify(Object.assign({ action: "visite", v: id, e: entree, p: location.pathname, s: source, a: innerWidth < 768 ? "m" : "o" }, S));
+      if (corps === dernier) return;
+      dernier = corps;
+      try { if (!(navigator.sendBeacon && navigator.sendBeacon(URL_V, corps))) fetch(URL_V, { method: "POST", mode: "no-cors", keepalive: true, body: corps }); } catch {}
+    }
+    addEventListener("scroll", () => { if (!S.d && scrollY > Math.min(600, (document.documentElement.scrollHeight - innerHeight) * 0.25)) S.d = 1; }, { passive: true });
+    if ("IntersectionObserver" in window) {
+      const vu = (sel, cle) => { const n = $(sel); if (!n) return; const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { S[cle] = 1; io.disconnect(); } }, { threshold: 0.25 }); io.observe(n); };
+      vu(".qw, .wiz", "sv"); vu("#tarifs", "px");
+    }
+    // Étape du simulateur : lue dans le texte « Étape 2 / 5 » déjà affiché, sans toucher au simulateur.
+    $$(".qw-step, #w-count").forEach(n => {
+      const lire = () => { const m = n.textContent.match(/(\d+)\s*\/\s*(\d+)/); if (!m) return; S.st = Math.max(S.st, Number(m[1])); S.sn = Number(m[2]); if (Number(m[1]) === Number(m[2])) S.co = 1; };
+      new MutationObserver(lire).observe(n, { childList: true, characterData: true, subtree: true });
+    });
+    document.addEventListener("click", e => { if (e.target.closest && e.target.closest('a[href^="tel:"]')) { S.ap = 1; envoyer(); } }, true);
+    window.thermazVisite = cle => { if (cle in S) { S[cle] = 1; envoyer(); } };
+    setTimeout(envoyer, 2500);
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") envoyer(); });
+    addEventListener("pagehide", envoyer);
+  })();
 })();
