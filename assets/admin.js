@@ -525,7 +525,7 @@
   const saisirMontant = (q, def) => { const s = prompt(q, def || ""); if (s === null) return null; const m = lireMontant(String(s).replace(/\s/g, "")); if (!(m > 0)) { toast("Montant invalide."); return null; } return m; };
   function validerAcompte(r) {
     if (!state.statuts.includes("Acompte reçu")) return toast("L'étape « Acompte reçu » manque dans le CRM.");
-    const m = saisirMontant("Montant de l'acompte reçu de " + (r.nom || "ce client") + " (en €) :", r.montantNum ? Math.round(r.montantNum * 0.3) : "");
+    const m = saisirMontant("Montant de l'acompte reçu de " + (r.nom || "ce client") + " (en €) :", r.montantNum ? Math.round(r.montantNum * 0.4) : "");
     if (m === null) return;
     const f = { noteAjout: "Acompte reçu : " + euro(m) + " (avant : " + r.statut + ")" };
     if (r.statut === "Signé") f.statut = "Acompte reçu";
@@ -712,7 +712,7 @@
       el("label", { class: "ad-check" }, el("input", { type: "checkbox", checked: dv.remplacement || null, onchange: e => { dv.remplacement = e.target.checked; } }), "Remplacement : on garde les liaisons et goulottes en place"),
       el("h3", { class: "ad-h2", text: "Prix et règlement" }),
       champ("Mon prix total TTC, tout compris (vide = prix du site)", dv.monPrix || "", v => dv.monPrix = nombre(v)),
-      el("label", { class: "ad-check" }, el("input", { type: "checkbox", checked: dv.acompte || null, onchange: e => { dv.acompte = e.target.checked; } }), "Acompte de 30 % écrit sur le devis"),
+      el("label", { class: "ad-check" }, el("input", { type: "checkbox", checked: dv.acompte || null, onchange: e => { dv.acompte = e.target.checked; } }), "Acompte de 40 % écrit sur le devis"),
       el("label", { class: "ad-check" }, el("input", { type: "checkbox", checked: dv.deuxFois || null, onchange: e => { dv.deuxFois = e.target.checked; } }), "Proposer dans le mail de régler en deux fois"),
       el("label", {}, "Remarque pour le client (facultatif)", el("textarea", { rows: "2", oninput: e => { dv.remarques = e.target.value; } }, dv.remarques)),
       el("div", { class: "ad-totaux", id: "dv-tot" }),

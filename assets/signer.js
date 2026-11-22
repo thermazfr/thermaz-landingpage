@@ -35,6 +35,8 @@
   }
 
   let DV = null, choix = 0;
+  // Taux d'acompte du devis affiché (30 % pour les devis d'avant le 22/11/2026, 40 % ensuite) : il vient du serveur.
+  const pctAc = () => Math.round((DV && DV.acompte ? DV.acompte : 0.3) * 100);
 
   async function init() {
     if (!DEMO && (!/^D-(\d{4}|TEST)-\d{3,4}$/.test(D) || !/^[a-f0-9]{32}$/.test(K))) return invalide();
@@ -120,7 +122,7 @@
   function ibanBloc(acompte, numero) {
     return el("div", { class: "sg-card" },
       el("h2", { text: "Régler l'acompte" }),
-      el("p", { class: "sg-info", text: (acompte ? "Acompte de 30 % : " + euro(acompte) + ". " : "") + "Par virement, avec la référence du devis :" }),
+      el("p", { class: "sg-info", text: (acompte ? "Acompte de " + pctAc() + " % : " + euro(acompte) + ". " : "") + "Par virement, avec la référence du devis :" }),
       el("div", { class: "sg-iban", text: "IBAN : " + DV.iban }),
       el("div", { class: "sg-iban", text: "Référence : " + numero }),
       el("p", { class: "sg-info", text: "Vous pouvez aussi régler par chèque, espèces ou carte : dites-le à Andy." }));
@@ -138,7 +140,7 @@
           : el("h2", { text: titre }),
         el("div", { class: "sg-total", text: euro(o.total) })),
       lignes,
-      el("p", { class: "sg-acompte", text: "Total TTC, fourni, posé et mis en service." + (DV.acompte ? " Acompte de 30 % à la signature : " + euro(o.total * DV.acompte) + " · solde le jour de la mise en service : " + euro(o.total * (1 - DV.acompte)) + "." : "") }));
+      el("p", { class: "sg-acompte", text: "Total TTC, fourni, posé et mis en service." + (DV.acompte ? " Acompte de " + pctAc() + " % à la signature : " + euro(o.total * DV.acompte) + " · solde le jour de la mise en service : " + euro(o.total * (1 - DV.acompte)) + "." : "") }));
     if (plusieurs) card.addEventListener("click", e => { if (e.target.tagName !== "INPUT" && choix !== n) { choix = n; rendre(true); } });
     return card;
   }
@@ -180,7 +182,7 @@
           ? "matériel neuf (fluide R32), fixation des nouvelles unités, raccordement aux liaisons frigorifiques, au câblage et à l'évacuation des condensats déjà en place, raccordement électrique de la climatisation, tirage au vide, contrôle d'étanchéité, mise en service et essais, explication de l'utilisation."
           : "matériel neuf (fluide R32), supports et fixations, liaisons frigorifiques jusqu'à 5 m par unité, goulottes, câbles de liaison, évacuation des condensats, raccordement électrique de la climatisation, tirage au vide, contrôle d'étanchéité, mise en service et essais, explication de l'utilisation."),
         DV.remarques ? el("p", { text: DV.remarques }) : null,
-        el("p", { text: "TVA non applicable, art. 293 B du CGI. " + (DV.acompte ? "Règlement : acompte de 30 % à la signature, solde le jour de la mise en service (virement, chèque, espèces ou carte). Pose sous 2 à 3 semaines après réception de l'acompte." : "Règlement par virement, chèque, espèces ou carte. Pose sous 2 à 3 semaines après la signature.") + " Pose garantie 2 ans, matériel garanti par le fabricant." + (DV.copro ? " Sous réserve de l'accord de la copropriété pour les groupes extérieurs." : "") }),
+        el("p", { text: "TVA non applicable, art. 293 B du CGI. " + (DV.acompte ? "Règlement : acompte de " + pctAc() + " % à la signature, solde le jour de la mise en service (virement, chèque, espèces ou carte). Pose sous 2 à 3 semaines après réception de l'acompte." : "Règlement par virement, chèque, espèces ou carte. Pose sous 2 à 3 semaines après la signature.") + " Pose garantie 2 ans, matériel garanti par le fabricant." + (DV.copro ? " Sous réserve de l'accord de la copropriété pour les groupes extérieurs." : "") }),
         el("details", { class: "sg-det" }, el("summary", { text: "Droit de rétractation (14 jours)" }),
           el("p", { text: "Vous disposez de 14 jours à compter de la signature pour vous rétracter, sans avoir à donner de motif. Le plus simple : envoyez un e-mail à " + DV.entreprise.mail + " (une phrase claire suffit, par exemple « Je me rétracte du devis n° " + DV.numero + " »). Vous pouvez aussi écrire à " + DV.entreprise.forme + " " + DV.entreprise.nom + ", " + DV.entreprise.adresse + ". Nous vous remboursons tous les paiements reçus au plus tard 14 jours après en avoir été informés. Si vous demandez que les travaux commencent avant la fin de ce délai, vous paierez un montant proportionnel au travail déjà réalisé si vous vous rétractez ensuite. Le formulaire type de rétractation est à la fin du devis PDF joint au mail." }))),
       barreSigner(),
@@ -224,7 +226,7 @@
         el("h1", { text: "Merci, votre devis est signé !" }),
         el("p", { text: "Devis n° " + r.numero + " signé le " + r.le + " · " + euro(r.total) + " TTC." }),
         el("p", { text: "Andy vous écrit très vite par mail avec la copie signée et ses prochaines dates de pose." + (r.travauxAvant ? "" : " Comme vous n'avez pas demandé de travaux avant, la pose aura lieu après le délai de rétractation de 14 jours.") })),
-      r.iban ? ibanBloc(r.acompte, r.numero) : r.acompte ? el("p", { class: "sg-info", text: "Acompte de 30 % : " + euro(r.acompte) + ". Andy vous indique comment le régler." }) : null,
+      r.iban ? ibanBloc(r.acompte, r.numero) : r.acompte ? el("p", { class: "sg-info", text: "Acompte de " + pctAc() + " % : " + euro(r.acompte) + ". Andy vous indique comment le régler." }) : null,
       el("p", { class: "sg-info", text: "Une question ? Appelez Andy au " + TEL + "." }));
   }
 
@@ -287,7 +289,7 @@
   function demo(action, data) {
     const deux = q.get("demo") === "2";
     const base = {
-      ok: true, numero: "D-2026-012", date: "07/11/2026", validite: "22/11/2026", expire: false, acompte: 0.3, validiteJours: 15, signe: null, iban: "",
+      ok: true, numero: "D-2026-012", date: "07/11/2026", validite: "22/11/2026", expire: false, acompte: 0.4, validiteJours: 15, signe: null, iban: "",
       client: { nom: "M. Client Exemple", adresse: "1 rue de l'Exemple, 13300 Salon-de-Provence" }, remarques: "Séjour : mono-split 3,5 kW. Chambres : bi-split 2 + 2 kW.", copro: false,
       entreprise: { nom: "Thermaz", forme: "Entreprise individuelle", adresse: "46 rue Maréchal Joffre, 13300 Salon-de-Provence", siren: "105 451 199", tel: TEL, mail: "thermaz.fr@gmail.com" },
       options: [
@@ -303,7 +305,7 @@
     return new Promise(res => setTimeout(() => {
       if (action === "devisPublic") return res(base);
       const o = base.options[(data.option || 1) - 1];
-      res({ ok: true, numero: base.numero, le: "07/11/2026 à 23:10", total: o.total, acompte: sans ? 0 : Math.round(o.total * 30) / 100, iban: sans ? "" : "FR76 0000 0000 0000 0000 0000 000", travauxAvant: !!data.travauxAvant });
+      res({ ok: true, numero: base.numero, le: "07/11/2026 à 23:10", total: o.total, acompte: sans ? 0 : Math.round(o.total * 40) / 100, iban: sans ? "" : "FR76 0000 0000 0000 0000 0000 000", travauxAvant: !!data.travauxAvant });
     }, 300));
   }
 
