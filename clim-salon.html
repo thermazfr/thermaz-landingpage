@@ -322,7 +322,7 @@
     "lamanon": "Lamanon", "cornillon-confoux": "Cornillon-Confoux", "lambesc": "Lambesc", "alleins": "Alleins", "mallemort": "Mallemort",
     "rognac": "Rognac", "velaux": "Velaux", "coudoux": "Coudoux", "berre-l-etang": "Berre-l'Étang", "la-fare-les-oliviers": "La Fare-les-Oliviers",
     "saint-cannat": "Saint-Cannat", "aix-en-provence": "Aix-en-Provence", "vitrolles": "Vitrolles" };
-  var cle = (new URLSearchParams(location.search).get("ville") || "").toLowerCase();
+  var cle = (new URLSearchParams(location.search).get("ville") || "").toLowerCase().replace(/\.html$/, "");
   var nom = V[cle];
   if (!nom || cle === "salon-de-provence") return;
   var h1 = document.getElementById("titre-lp");
