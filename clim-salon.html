@@ -57,7 +57,8 @@
 .pd-nav>button{display:grid;place-items:center}
 .pd-nav>button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
-/* Mes derniers chantiers : 4 photos en grille */
+/* Mes derniers chantiers : 4 photos en grille, juste sous le haut de page (24/11, Andy : la confiance d'abord) */
+.lp-chantiers{padding-block:clamp(28px,4vw,56px)}
 .lp-works{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 @media (min-width:900px){.lp-works{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}}
 .lp-works figure{margin:0}
@@ -108,6 +109,22 @@
 .lp-h2 .h-g svg{display:block;width:15px;height:15px}
 .lp-h2 .h-rating b{font-size:15px;font-weight:750;line-height:1}
 .lp-h2 .h-stars svg{display:block;width:74px;height:14px;fill:#F5B301}
+/* 24/11 : le devis en 1 minute seul au centre, dans une carte sombre (modèle demandé par Andy) */
+.lp-devis{background:var(--alt);padding-block:clamp(28px,5vw,64px);scroll-margin-top:64px}
+.lp-form{--bg:#0B1622;--surface:#13222F;--alt:#172838;--fg:#EEF3F7;--muted:#A3B4C4;--line:#2A3D50;--cold:#6AAEF5;--cold-soft:#18324D;
+  max-width:760px;margin-inline:auto;background:#0B1622;color:var(--fg);border-radius:22px;padding:clamp(24px,4.5vw,48px);box-shadow:0 24px 60px rgba(11,22,34,.25)}
+.lp-form-t{margin-bottom:26px}
+.lp-form-k{margin:0 0 12px;font-size:14.5px;font-weight:700;letter-spacing:.02em;color:#8DBDF3}
+.lp-form-t h2{margin:0;font-size:clamp(28px,3.6vw,40px);line-height:1.1;color:#fff}
+.lp-form-t p:last-child{margin:12px 0 0;max-width:52ch;font-size:17px;line-height:1.5;color:var(--muted)}
+.lp-form .qw-tabs{background:#13222F}
+.lp-form .qw-card{background:#13222F;border-color:#2A3D50;box-shadow:none}
+.lp-form .qw-recap{background:#0F1C28}
+.lp-form .qo-art{background:#DCE4EC}
+.lp-form .qw-or{color:var(--muted)}
+.lp-form .qw-or a{color:#fff}
+.lp-form-s{margin:18px 0 0;text-align:center;font-size:14px;color:var(--muted)}
+@media (max-width:599px){.lp-devis{padding-block:16px 28px}.lp-devis>.wrap{padding-inline:10px}.lp-form{border-radius:18px;padding:22px 14px}}
 </style>
 </head>
 <body class="lp">
@@ -142,12 +159,25 @@
   </div>
 </section>
 
-<section class="sec" id="devis" aria-labelledby="quote-title">
-  <div class="wrap qw-grid">
-    <div class="qw-intro">
-      <h2 class="h2" id="quote-title">Votre devis en une minute.</h2>
-      <p class="lead">Répondez à quelques questions : votre estimation s'affiche dès l'envoi de votre demande, et je vous rappelle dans la journée pour l'affiner.</p>
-      <ul class="check"><li>Gratuit et sans engagement</li><li>Estimation affichée dès l'envoi</li><li>Rappel par l'artisan, pas par un centre d'appels</li></ul>
+<section class="sec lp-chantiers" aria-labelledby="chantiers-title">
+  <div class="wrap">
+    <div class="sec-head"><h2 class="h2" id="chantiers-title">Mes derniers chantiers.</h2><p class="lead">Des poses faites par Andy autour de Salon-de-Provence, photographiées sur place.</p></div>
+    <div class="lp-works">
+      <figure><img width="640" height="360" src="assets/hero/murale-bosch-sejour-640.jpg" srcset="assets/hero/murale-bosch-sejour-640.jpg 640w, assets/hero/murale-bosch-sejour-1600.jpg 1600w" sizes="(min-width: 900px) 290px, 50vw" loading="lazy" decoding="async" alt="Climatisation murale Bosch posée dans un séjour par Thermaz"><figcaption>Murale Bosch dans un séjour</figcaption></figure>
+      <figure><img width="640" height="360" src="assets/hero/murale-altech-pool-house-640.jpg" srcset="assets/hero/murale-altech-pool-house-640.jpg 640w, assets/hero/murale-altech-pool-house-1600.jpg 1600w" sizes="(min-width: 900px) 290px, 50vw" loading="lazy" decoding="async" alt="Climatisation murale Altech posée dans un pool house près de Salon-de-Provence"><figcaption>Murale Altech dans un pool house</figcaption></figure>
+      <figure><img width="640" height="360" src="assets/hero/groupe-panasonic-toit-terrasse-640.jpg" srcset="assets/hero/groupe-panasonic-toit-terrasse-640.jpg 640w, assets/hero/groupe-panasonic-toit-terrasse-1600.jpg 1600w" sizes="(min-width: 900px) 290px, 50vw" loading="lazy" decoding="async" alt="Groupe extérieur Panasonic posé sur un toit-terrasse par Thermaz"><figcaption>Groupe Panasonic sur un toit-terrasse</figcaption></figure>
+      <figure><img width="640" height="360" src="assets/hero/groupe-altech-facade-640.jpg" srcset="assets/hero/groupe-altech-facade-640.jpg 640w, assets/hero/groupe-altech-facade-1600.jpg 1600w" sizes="(min-width: 900px) 290px, 50vw" loading="lazy" decoding="async" alt="Groupe extérieur Altech en façade, liaisons sous goulotte, pose Thermaz"><figcaption>Groupe Altech en façade, liaisons sous goulotte</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="sec lp-devis" id="devis" aria-labelledby="quote-title">
+  <div class="wrap">
+   <div class="lp-form">
+    <div class="lp-form-t">
+      <p class="lp-form-k">Devis gratuit, rappel dans la journée</p>
+      <h2 id="quote-title">Votre devis en 1 minute</h2>
+      <p>Quelques questions suffisent : votre estimation s'affiche à l'envoi, et Andy vous rappelle pour l'affiner.</p>
     </div>
     <div class="qw" id="devis-rapide" data-qw-src="data/devis-rapide.json" data-flow="installation">
 <div class="qw-tabs" role="tablist"><button type="button" role="tab" data-flow="installation" aria-selected="true">Installation</button><button type="button" role="tab" data-flow="entretien" aria-selected="false">Entretien</button><button type="button" role="tab" data-flow="depannage" aria-selected="false">Dépannage</button></div>
@@ -168,22 +198,12 @@
 </div>
 <p class="qw-or">Plus rapide : appelez le <a href="tel:+33651106435">06 51 10 64 35</a></p>
 </div>
+   <p class="lp-form-s">Gratuit et sans engagement. Rappel par l'artisan, pas par un centre d'appels.</p>
+   </div>
   </div>
 </section>
 
-<section class="sec" aria-labelledby="chantiers-title">
-  <div class="wrap">
-    <div class="sec-head"><h2 class="h2" id="chantiers-title">Mes derniers chantiers.</h2><p class="lead">Des poses faites par Andy autour de Salon-de-Provence, photographiées sur place.</p></div>
-    <div class="lp-works">
-      <figure><img width="640" height="360" src="assets/hero/murale-bosch-sejour-640.jpg" srcset="assets/hero/murale-bosch-sejour-640.jpg 640w, assets/hero/murale-bosch-sejour-1600.jpg 1600w" sizes="(min-width: 900px) 290px, 50vw" loading="lazy" decoding="async" alt="Climatisation murale Bosch posée dans un séjour par Thermaz"><figcaption>Murale Bosch dans un séjour</figcaption></figure>
-      <figure><img width="640" height="360" src="assets/hero/murale-altech-pool-house-640.jpg" srcset="assets/hero/murale-altech-pool-house-640.jpg 640w, assets/hero/murale-altech-pool-house-1600.jpg 1600w" sizes="(min-width: 900px) 290px, 50vw" loading="lazy" decoding="async" alt="Climatisation murale Altech posée dans un pool house près de Salon-de-Provence"><figcaption>Murale Altech dans un pool house</figcaption></figure>
-      <figure><img width="640" height="360" src="assets/hero/groupe-panasonic-toit-terrasse-640.jpg" srcset="assets/hero/groupe-panasonic-toit-terrasse-640.jpg 640w, assets/hero/groupe-panasonic-toit-terrasse-1600.jpg 1600w" sizes="(min-width: 900px) 290px, 50vw" loading="lazy" decoding="async" alt="Groupe extérieur Panasonic posé sur un toit-terrasse par Thermaz"><figcaption>Groupe Panasonic sur un toit-terrasse</figcaption></figure>
-      <figure><img width="640" height="360" src="assets/hero/groupe-altech-facade-640.jpg" srcset="assets/hero/groupe-altech-facade-640.jpg 640w, assets/hero/groupe-altech-facade-1600.jpg 1600w" sizes="(min-width: 900px) 290px, 50vw" loading="lazy" decoding="async" alt="Groupe extérieur Altech en façade, liaisons sous goulotte, pose Thermaz"><figcaption>Groupe Altech en façade, liaisons sous goulotte</figcaption></figure>
-    </div>
-  </div>
-</section>
-
-<section class="sec alt" id="avis" aria-labelledby="avis-title"><div class="wrap">
+<section class="sec" id="avis" aria-labelledby="avis-title"><div class="wrap">
 <div class="sec-head row"><div><h2 class="h2" id="avis-title">Ils m'ont fait confiance.</h2><p class="lead lp-avis-note"><a data-profile-link href="#"><b data-rating="note">5,0</b><b>/5 sur Google</b></a>. Les avis sont tous publiés sur ma fiche, sans filtre.</p></div><a class="btn btn-line btn-sm" data-profile-link href="#">Voir les avis sur Google</a></div>
 <div id="reviews" class="rev-empty" data-max="3"><p class="muted">Les avis de mes clients sont publiés sur ma fiche Google.</p><a class="btn btn-line btn-sm" data-profile-link href="#">Voir les avis sur Google</a></div>
 </div></section>
