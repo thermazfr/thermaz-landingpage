@@ -233,12 +233,22 @@
 
   /* ----- Cartes ----- */
   const tel = t => { const d = String(t || "").replace(/[^\d+]/g, ""); return d.startsWith("0") ? "+33" + d.slice(1) : d; };
+  // Note du prospect (A, B ou C), lue dans la colonne « Qualité » du CRM : « C : compare pour l'instant, hors zone ».
+  function noteDe(r) {
+    const m = String((r && r.qualite) || "").trim().match(/^([ABC])(?:\s*:\s*(.*))?$/);
+    return m ? { note: m[1], raison: (m[2] || "").trim() } : null;
+  }
+  const NOTE_MOT = { A: "bon prospect, à rappeler dans l'heure", B: "à rappeler aujourd'hui", C: "réponse par message, pas de déplacement avant photos" };
+  const pastille = n => el("span", { class: "ad-note", "data-n": n.note, title: "Prospect " + n.note + " : " + NOTE_MOT[n.note], "aria-label": "Prospect " + n.note, text: n.note });
+  // Tri : les A d'abord, puis les B (et les demandes sans note), puis les C. L'ordre d'origine est gardé à note égale.
+  const rangNote = r => { const n = noteDe(r); return n ? { A: 0, B: 1, C: 2 }[n.note] : 1; };
   function carte(r, ligne) {
-    const t = tel(r.tel), q = quand(r.action);
+    const t = tel(r.tel), q = quand(r.action), n = noteDe(r);
     return el("article", { class: "ad-item" },
       el("button", { class: "ad-item-main", type: "button", onclick: () => openFiche(r) },
-        el("span", { class: "ad-item-top" }, el("b", { text: r.nom || "(sans nom)" }), el("span", { class: "ad-badge", "data-s": r.statut || "", text: r.statut || "Nouveau" })),
+        el("span", { class: "ad-item-top" }, el("span", { class: "ad-item-nom" }, n ? pastille(n) : null, el("b", { text: r.nom || "(sans nom)" })), el("span", { class: "ad-badge", "data-s": r.statut || "", text: r.statut || "Nouveau" })),
         el("small", { text: [r.commune, r.prestation, r.montantNum ? euro(r.montantNum) : ""].filter(Boolean).join(" · ") }),
+        n && n.raison ? el("small", { class: "ad-raison", text: "Prospect " + n.note + " : " + n.raison }) : null,
         ligne !== false && r.action ? el("span", { class: "ad-next" + (q && q.diff < 0 ? " late" : ""), text: "→ " + r.action + (q ? " (" + q.label + ")" : "") })
           : el("small", { text: "Reçue le " + r.recu })),
       el("div", { class: "ad-item-acts" },
@@ -444,7 +454,9 @@
     }));
   }
   function renderToday() {
-    const t = state.today, c = t.chiffres, s = $("#s-today"), tout = aFaire(), todo = tout.filter(r => !estFait(r)), finis = tout.filter(estFait);
+    const t = state.today, c = t.chiffres, s = $("#s-today"), tout = aFaire(), finis = tout.filter(estFait);
+    // « À faire maintenant » : les prospects A passent avant les B, puis les C.
+    const todo = tout.filter(r => !estFait(r)).sort((x, y) => rangNote(x) - rangNote(y));
     const h = new Date().getHours();
     const att = enAttentePaiement(), aEnc = att.reduce((x, r) => x + reste(r), 0);
     const avenir = (t.rdv || []).filter(ev => !rdvFait(ev)).sort((a, b) => new Date(a.debut) - new Date(b.debut))[0];
@@ -532,7 +544,8 @@
     $("#fi-notes-rapides").replaceChildren(...["Pas de réponse", "Message laissé", "Rappelé", "Visite fixée", "Devis envoyé", "Attend l'accord", "Trop cher"].map(t2 => el("button", { type: "button", text: t2, onclick: () => { const n = $("#fi-note"); n.value = (n.value ? n.value.replace(/\s*$/, "") + ". " : "") + t2; } })));
     $("#fi-notes").textContent = r.notes || "";
     $("#fi-montant").value = r.montantNum || "";
-    const infos = [["Téléphone", r.tel], ["E-mail", r.email], ["Détails", r.details], ["Message", r.message], ["Estimation", r.estimation], ["Origine", [r.source, r.connu].filter(Boolean).join(" · ")], ["Ligne du CRM", String(r.row)]];
+    const nq = noteDe(r);
+    const infos = [["Note du prospect", nq ? nq.note + " : " + (nq.raison ? nq.raison + " (" + NOTE_MOT[nq.note] + ")" : NOTE_MOT[nq.note]) : ""], ["Téléphone", r.tel], ["E-mail", r.email], ["Détails", r.details], ["Message", r.message], ["Estimation", r.estimation], ["Origine", [r.source, r.connu].filter(Boolean).join(" · ")], ["Ligne du CRM", String(r.row)]];
     $("#fi-infos").replaceChildren(...infos.filter(i => i[1]).flatMap(([k, v]) => [el("dt", { text: k }), el("dd", { text: v })]));
     msg("m-fiche", "");
     $("#fiche").showModal();
@@ -577,30 +590,297 @@
     await enregistrer(f);
   }));
 
+  /* ----- Note du prospect : copie fidèle de la règle du serveur -----
+     Le bloc ci-dessous est le MÊME que dans les deux scripts Google (CRM-THERMAZ/Code.gs et admin-api/Code.gs).
+     Il sert au verdict en direct du guide d'appel et au mode démo. La note enregistrée reste celle calculée par le serveur :
+     si la règle change là-bas, recopie le bloc ici, sinon le guide d'appel et le CRM ne diront plus la même chose. */
+/* --- NOTE PROSPECT : début du bloc commun --- */
+
+// Zones du site (data/devis-rapide.json > ent.zones, recopiées le 22/11/2026) et nouvelle zone sud.
+const NP_ZONES = [
+  { z: 1, communes: ['Salon-de-Provence', 'Pélissanne', 'Grans', 'La Barben', 'Lamanon'] },
+  { z: 2, communes: ['Lançon-Provence', 'Cornillon-Confoux', 'Eyguières', 'Sénas', 'Saint-Chamas', 'Miramas', 'La Fare-les-Oliviers', 'Lambesc', 'Mallemort', 'Aurons', 'Vernègues', 'Alleins'] },
+  { z: 3, communes: ['Istres', 'Saint-Cannat', 'Coudoux', 'Velaux', 'Éguilles', 'Charleval'] },
+  { z: 4, communes: ['Aix-en-Provence', 'Ventabren'] }, // la plus éloignée (27 à 37 km) : jamais A
+  { z: 'sud', communes: ['Vitrolles', 'Marignane', 'Martigues', 'Carry-le-Rouet', 'Sausset-les-Pins', 'Rognac', 'Berre-l\'Étang', 'Saint-Victoret', 'Châteauneuf-les-Martigues', 'Gignac-la-Nerthe', 'Ensuès-la-Redonne'] }
+];
+// Noms courts que les gens écrivent souvent à la place du nom complet.
+const NP_ALIAS = { 'salon': 1, 'lancon': 2, 'lancon de provence': 2, 'la fare': 2, 'aix': 4, 'berre': 'sud', 'carry': 'sud', 'sausset': 'sud', 'ensues': 'sud' };
+
+// Nom lisible des questions du site. Sert à écrire la colonne « Détails » et à relire une ligne du CRM.
+const NP_LIBELLES = {
+  deja_clim: 'Déjà une clim', occupant: 'Occupant', delai: 'Délai', budget: 'Budget',
+  appareil: 'Appareil', poseur: 'Posée par', age_clim: 'Âge de la clim', diagnostic_89: 'Diagnostic à 89 €',
+  prix_ok: 'Réaction au prix' // guide d'appel de l'espace admin : « Ça lui va », « Il hésite », « Trop cher pour lui »
+};
+
+// Première chose à faire selon la note.
+const NP_ACTIONS = {
+  A: 'Rappeler dans l\'heure',
+  B: 'Rappeler aujourd\'hui',
+  C: 'Répondre par message, pas de déplacement avant photos'
+};
+
+/** Texte simplifié pour comparer : sans majuscules, sans accents, sans tirets ni ponctuation. */
+function npTexte(s) {
+  return String(s === undefined || s === null ? '' : s).toLowerCase().normalize('NFD')
+    .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+/** Valeur d'une question : le champ lui-même, sinon la ligne « Délai : … » relue dans les détails. */
+function npChamp(f, cle) {
+  if (f[cle] !== undefined && f[cle] !== null && String(f[cle]).trim()) return String(f[cle]).trim();
+  const noms = [npTexte(cle), npTexte(NP_LIBELLES[cle])];
+  const lignes = String(f.details === undefined || f.details === null ? '' : f.details).split('\n');
+  for (let i = 0; i < lignes.length; i++) {
+    const p = lignes[i].indexOf(':');
+    if (p > 0 && noms.indexOf(npTexte(lignes[i].slice(0, p))) >= 0) return lignes[i].slice(p + 1).trim();
+  }
+  return '';
+}
+
+/** Zone d'une commune : 1, 2, 3, 4, 'sud', 'hors' (commune connue nulle part) ou '' (commune non donnée). */
+function npZone(commune) {
+  const c = (' ' + npTexte(commune).replace(/\d+/g, ' ').replace(/\s+/g, ' ').trim() + ' ')
+    .replace(/ st /g, ' saint ').replace(/ ste /g, ' sainte ');
+  if (!c.trim()) return '';
+  let zone = 'hors', long = 0;
+  const essai = function (nom, z) {
+    const n = npTexte(nom);
+    if (n.length > long && c.indexOf(' ' + n + ' ') >= 0) { zone = z; long = n.length; }
+  };
+  NP_ZONES.forEach(function (x) { x.communes.forEach(function (nom) { essai(nom, x.z); }); });
+  Object.keys(NP_ALIAS).forEach(function (nom) { essai(nom, NP_ALIAS[nom]); });
+  return zone;
+}
+
+/** Les nombres d'un texte (« 1 500 à 3 000 € » rend [1500, 3000]). */
+function npNombres(s) {
+  const t = String(s === undefined || s === null ? '' : s).replace(/[   ]/g, ' ');
+  const liste = [];
+  (t.match(/\d{1,3}(?:[ .]\d{3})+(?:,\d+)?|\d+(?:[.,]\d+)?/g) || []).forEach(function (m) {
+    const milliers = /^\d{1,3}(?:[ .]\d{3})+/.test(m);
+    const n = parseFloat((milliers ? m.replace(/[ .]/g, '') : m).replace(',', '.'));
+    if (!isNaN(n)) liste.push(n);
+  });
+  return liste;
+}
+
+/** Vrai si on parle d'une clim monobloc ou mobile (et pas d'un téléphone mobile ou d'un mobil-home). */
+function npMobile(appareil, texte) {
+  if (/monobloc|mobile/.test(appareil) || /monobloc/.test(texte)) return true;
+  const t = (' ' + texte + ' ')
+    .replace(/ mobil ?e? ?home /g, ' ')
+    .replace(/ (numero|telephone|tel|ligne|portable|application|appli|version|forfait) (de |du )?mobile /g, ' ')
+    .replace(/ (sur|par|mon|au) (le |mon )?mobile /g, ' ');
+  return / mobile /.test(t);
+}
+
+/**
+ * Note d'une demande. f = les champs en texte (tous facultatifs) :
+ * prestation, commune, telephone (ou tel), email, message, details, estimation, source, connu,
+ * deja_clim, occupant, delai, budget, appareil, poseur, age_clim, diagnostic_89, prix_ok,
+ * et appel (true quand la demande est notée pendant un appel, avec le guide d'appel de l'espace admin).
+ * Rend { note: 'A' | 'B' | 'C', raisons: ['…'] }. Un champ absent ne donne jamais un C (sauf le téléphone).
+ */
+function noteProspect(f) {
+  f = f || {};
+  const texte = npTexte([f.details, f.message].join(' '));
+  const origine = npTexte([f.source, f.connu].join(' '));
+  const presta = npTexte(f.prestation);
+  const delai = npTexte(npChamp(f, 'delai'));
+  const occupant = npTexte(npChamp(f, 'occupant'));
+  const prix = npTexte(npChamp(f, 'prix_ok'));
+  const zone = npZone(f.commune);
+  const appel = f.appel === true || /\bappel\b/.test(origine);
+
+  // 1. Un seul de ces signaux suffit pour un C.
+  const c = [];
+  if (delai.indexOf('compare') >= 0) c.push('compare pour l\'instant');
+  if (occupant.indexOf('pas encore d accord') >= 0) c.push('locataire sans accord du propriétaire');
+  if (npMobile(npTexte(npChamp(f, 'appareil')), texte)) c.push('clim monobloc ou mobile');
+  if (npTexte(npChamp(f, 'poseur')).indexOf('moi ou un proche') >= 0 || /\bkit\b|grande surface|pret a poser/.test(texte)) c.push('clim posée soi-même ou en kit');
+  // Pas de téléphone = C, sauf pour un appel (le numéro est alors dans le téléphone d'Andy).
+  if (String(f.telephone || f.tel || '').replace(/\D/g, '').length < 8 && !appel) c.push('pas de téléphone');
+  if (zone === 'hors') c.push('hors zone');
+  // Budget nettement sous le prix estimé : le haut de la tranche choisie est sous 85 % de l'estimation.
+  const budget = npChamp(f, 'budget');
+  const tranche = /plus de|ne sais pas/.test(npTexte(budget)) ? [] : npNombres(budget).filter(function (n) { return n >= 100; });
+  const estime = npNombres(f.estimation).filter(function (n) { return n >= 100; })[0];
+  if (tranche.length && estime && Math.max.apply(null, tranche) < 0.85 * estime) {
+    c.push('budget sous l\'estimation (' + Math.max.apply(null, tranche) + ' € pour ' + Math.round(estime) + ' €)');
+  }
+  if (prix.indexOf('trop cher') >= 0) c.push('trop cher pour lui');
+  if (c.length) return { note: 'C', raisons: c };
+
+  // 2. Les signaux d'un bon prospect.
+  const a = [];
+  const remplacement = presta.indexOf('remplacement') >= 0 || npTexte(npChamp(f, 'deja_clim')).indexOf('je la remplace') >= 0;
+  // Un appel compte comme bon signe seulement quand rien n'a été coché : avec le guide d'appel, ce sont les réponses qui décident.
+  const guide = !!(delai || occupant || prix);
+  if (appel && !guide) a.push('appel téléphonique');
+  if (/bouche a oreille|recommand/.test(origine)) a.push('bouche-à-oreille');
+  if (/client existant|deja client|ancien client/.test(origine)) a.push('client existant');
+  if (remplacement) a.push('remplacement');
+  if (presta.indexOf('entretien') >= 0) a.push('entretien');
+  const proche = zone === 1 || zone === 2 || zone === 3, presse = delai.indexOf('des que possible') >= 0;
+  if (proche && occupant.indexOf('proprietaire') === 0 && presse) a.push('propriétaire pressé en zone proche');
+  // Au téléphone : pressé, en zone proche, et le prix annoncé lui va (propriétaire ou locataire avec accord).
+  else if (appel && proche && presse && prix.indexOf('ca lui va') >= 0) a.push('pressé en zone proche, prix accepté');
+
+  // 3. Ce qui empêche d'être A : la zone la plus éloignée, la zone sud (sauf appel ou remplacement), une hésitation sur le prix.
+  const frein = [];
+  if (zone === 4) frein.push('zone éloignée (27 à 37 km)');
+  if (zone === 'sud' && !appel && !remplacement) frein.push('zone sud');
+  if (prix.indexOf('hesite') >= 0) frein.push('hésite sur le prix');
+  if (delai.indexOf('1 a 3 mois') >= 0 && presta.indexOf('entretien') < 0) frein.push('projet dans 1 à 3 mois');
+  if (frein.length) return { note: 'B', raisons: frein.concat(a) };
+  const plus = (zone === 'sud' ? ['zone sud'] : []).concat(prix.indexOf('ca lui va') >= 0 ? ['prix accepté'] : []);
+  if (a.length) return { note: 'A', raisons: a.concat(plus) };
+
+  // 4. Tout le reste : B.
+  const b = [];
+  if (occupant.indexOf('locataire') === 0) b.push('locataire avec accord');
+  return { note: 'B', raisons: b.concat(plus) };
+}
+
+/** Texte écrit dans la colonne « Qualité » : « C : compare pour l'instant, hors zone ». */
+function npTexteNote(n) {
+  return n.note + (n.raisons && n.raisons.length ? ' : ' + n.raisons.join(', ') : '');
+}
+
+/* --- NOTE PROSPECT : fin du bloc commun --- */
+
   /* ----- Nouvelle demande ----- */
   const PRESTA = ["Installation", "Entretien", "Dépannage", "Remplacement", "Mise en service", "Autre"];
   const SOURCES = { "Appel Google Ads": ["Appel Google Ads", ""], "Appel direct": ["Autre", "Appel direct"], "Bouche-à-oreille": ["Autre", "Bouche-à-oreille"], "Facebook / Instagram": ["Autre", "Facebook / Instagram"], "Client existant": ["Autre", "Client existant"], "Autre": ["Autre", ""] };
-  const pick = { presta: "", source: "" };
-  function chipsPick(box, list, key) {
-    box.replaceChildren(...list.map(v => el("button", { type: "button", "aria-pressed": String(pick[key] === v), text: v, onclick: () => { pick[key] = pick[key] === v ? "" : v; chipsPick(box, list, key); } })));
+  const pick = { presta: "", source: "", occupant: "", delai: "", prix: "", decision: "" };
+  // apres (facultatif) : fonction appelée après chaque puce cochée ou décochée.
+  function chipsPick(box, list, key, apres) {
+    box.replaceChildren(...list.map(v => el("button", { type: "button", "aria-pressed": String(pick[key] === v), text: v, onclick: () => { pick[key] = pick[key] === v ? "" : v; chipsPick(box, list, key, apres); if (apres) apres(); } })));
   }
+
+  /* ----- Guide d'appel : les questions à poser dans l'ordre, et le verdict en direct (visite ou pas) -----
+     Les réponses sont les mêmes mots que sur le site : la note est donc calculée de la même façon partout. */
+  const OCCUPANTS = ["Propriétaire", "Locataire, avec l'accord du propriétaire", "Locataire, pas encore d'accord"];
+  const DELAIS = ["Dès que possible, sous 1 mois", "Dans 1 à 3 mois", "Plus tard, je compare pour l'instant"];
+  const PRIX_OK = ["Ça lui va", "Il hésite", "Trop cher pour lui"];
+  // Quoi faire selon la note (affiché dans l'encadré de verdict).
+  const VERDICT = {
+    A: "Propose la visite : donne-lui deux créneaux.",
+    B: "Pas de visite tout de suite : demande 3 photos (le mur, l'emplacement dehors, le tableau électrique), puis rappelle avec un prix.",
+    C: "Pas de visite. Envoie une fourchette par message et laisse-le revenir."
+  };
+  // La phrase à dire pour finir l'appel, selon la note.
+  const SUITE = {
+    A: "« Le plus simple, c'est que je passe voir sur place pour vous donner un prix ferme. Je peux passer … ou …, qu'est-ce qui vous arrange ? »",
+    B: "« Pour vous donner un prix ferme sans vous faire perdre de temps, envoyez-moi 3 photos par message : le mur prévu pour l'unité intérieure, l'endroit dehors pour le groupe et votre tableau électrique. Je vous rappelle avec un prix dès que je les ai. »",
+    C: "« Je vous envoie une fourchette de prix par message, comme ça vous avez tout sous les yeux. Et quand votre projet est décidé, vous me rappelez. »"
+  };
+  // Ce qu'Andy a vraiment décidé à la fin de l'appel (le serveur reçoit le mot court : visite, photos ou rien).
+  const DECISIONS = { "J'ai proposé la visite": "visite", "J'ai demandé des photos": "photos", "Pas de suite pour l'instant": "rien" };
+  // État du guide : la façon de saisir, la commune retenue pour le verdict, la fourchette affichée, l'heure d'ouverture.
+  const guide = { mode: "appel", commune: "", fourchette: "", debut: 0 };
+  // Les réponses notées pendant l'appel, sous la forme attendue par noteProspect (et par le serveur).
+  function reponsesAppel() {
+    const src = SOURCES[pick.source] || ["", ""];
+    return { prestation: pick.presta, commune: guide.commune, telephone: $("#nv-tel").value, details: $("#nv-details").value, source: src[0], connu: src[1], occupant: pick.occupant, delai: pick.delai, prix_ok: pick.prix, appel: true };
+  }
+  function majVerdict() {
+    if (guide.mode !== "appel") return;
+    const box = $("#nv-verdict"), suite = $("#nv-suite");
+    if (!pick.presta && !guide.commune && !pick.occupant && !pick.delai && !pick.prix) {
+      box.dataset.n = "";
+      box.replaceChildren(el("p", { class: "ad-verdict-txt" }, el("b", { text: "Pose les questions dans l'ordre." }), el("small", { text: "Le verdict (visite ou pas) s'affiche ici dès la première réponse." })));
+      suite.classList.add("vide"); suite.textContent = "Le verdict te dira quoi lui proposer.";
+      return;
+    }
+    const n = noteProspect(reponsesAppel());
+    const reste = [[pick.presta && guide.commune, "le besoin"], [pick.occupant, "le logement"], [pick.delai, "le délai"], [pick.prix, "le prix"]].filter(x => !x[0]).map(x => x[1]);
+    box.dataset.n = n.note;
+    box.replaceChildren(
+      el("span", { class: "ad-note ad-note--xl", "data-n": n.note, "aria-label": "Prospect " + n.note, text: n.note }),
+      el("p", { class: "ad-verdict-txt" },
+        el("b", { text: VERDICT[n.note] }),
+        n.raisons.length ? el("small", { text: n.raisons.join(", ") }) : null,
+        // Un C est définitif (un seul signal suffit). Un A ou un B peut encore changer tant qu'il reste des questions.
+        reste.length && n.note !== "C" ? el("small", { class: "ad-verdict-reste", text: "Verdict provisoire, il reste : " + reste.join(", ") + "." }) : null));
+    suite.classList.remove("vide"); suite.textContent = SUITE[n.note];
+  }
+  // Phrase du prix : fourchette lue dans le catalogue du site (clim murale une pièce, et bi-split). Sans catalogue : pas de chiffres.
+  function majDirePrix() {
+    const p = $("#nv-dire-prix"), aide = $("#nv-prix-aide");
+    guide.fourchette = ""; // notée avec l'appel seulement quand des chiffres sont affichés
+    if (["Entretien", "Dépannage", "Mise en service", "Autre"].includes(pick.presta)) {
+      p.textContent = "« Je vous donne mon tarif pour vous situer. Ça correspond à ce que vous aviez prévu ? »";
+      aide.textContent = "Ce n'est pas une pose : donne ton tarif habituel, puis note sa réaction."; aide.hidden = false;
+      return;
+    }
+    const prix = (u, mural) => (CAT || []).filter(c => Number(c.u) === u && (!mural || c.t === "mural") && Number(c.p) > 0).map(c => Number(c.p));
+    const mono = prix(1, true), bi = prix(2, false);
+    const rond = n => (Math.round(n / 10) * 10).toLocaleString("fr-FR");
+    if (mono.length && bi.length) {
+      p.textContent = "« Pour vous situer : une pièce posée, c'est de " + rond(Math.min(...mono)) + " à " + rond(Math.max(...mono)) + " € chez moi, deux pièces à partir de " + rond(Math.min(...bi)) + " €. Ça correspond à ce que vous aviez prévu ? »";
+      guide.fourchette = "une pièce : " + rond(Math.min(...mono)) + " à " + rond(Math.max(...mono)) + " € ; deux pièces : dès " + rond(Math.min(...bi)) + " €";
+      aide.hidden = true;
+    } else {
+      p.textContent = "« Pour vous situer, je vous donne une fourchette de prix. Ça correspond à ce que vous aviez prévu ? »";
+      aide.textContent = "Les prix du site n'ont pas pu être chargés : donne ta fourchette de tête."; aide.hidden = false;
+    }
+  }
+  // Bascule entre le guide d'appel et le formulaire simple (les mêmes champs servent aux deux).
+  function modeDemande(m) {
+    guide.mode = m;
+    const f = $("#f-new");
+    $$("#nv-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
+    $$("[data-appel]", f).forEach(n => { n.hidden = m !== "appel"; });
+    $$("[data-simple]", f).forEach(n => { n.hidden = m === "appel"; });
+    f.classList.toggle("ad-appel", m === "appel");
+    // Guide d'appel : le besoin avant la commune (l'ordre de la phrase). Formulaire simple : l'ordre d'avant.
+    const c = $("#nv-commune-l"), p = $("#nv-presta-b");
+    if (m === "appel") c.before(p); else p.before(c);
+    $("#nv-presta").classList.toggle("ad-chips--gros", m === "appel");
+    // Pendant un appel, l'origine est « Appel direct » tant qu'Andy n'en choisit pas une autre.
+    if (m === "appel" && !pick.source) { pick.source = "Appel direct"; chipsPick($("#nv-source"), Object.keys(SOURCES), "source", majVerdict); }
+    majVerdict();
+  }
+  $$("#nv-mode button").forEach(b => b.addEventListener("click", () => { modeDemande(b.dataset.mode); if (b.dataset.mode === "simple") $("#nv-nom").focus(); }));
+  $("#nv-communes").replaceChildren(...NP_ZONES.flatMap(z => z.communes).map(c => el("option", { value: c })));
+  // Commune : le verdict attend un nom reconnu (ou la sortie du champ) pour ne pas afficher « hors zone » au milieu de la frappe.
+  $("#nv-commune").addEventListener("input", e => { const v = e.target.value.trim(); if (!v || npZone(v) !== "hors") { guide.commune = v; majVerdict(); } });
+  $("#nv-commune").addEventListener("change", e => { guide.commune = e.target.value.trim(); majVerdict(); });
+  $("#nv-details").addEventListener("input", majVerdict);
+
   function nouvelleDemande() {
-    $("#f-new").reset(); pick.presta = pick.source = ""; msg("m-new", "");
-    chipsPick($("#nv-presta"), PRESTA, "presta"); chipsPick($("#nv-source"), Object.keys(SOURCES), "source");
-    $("#nouveau").showModal(); setTimeout(() => $("#nv-nom").focus(), 60);
+    $("#f-new").reset(); pick.presta = pick.source = pick.occupant = pick.delai = pick.prix = pick.decision = ""; guide.commune = ""; msg("m-new", "");
+    guide.debut = Date.now(); // pour la durée de l'appel : de l'ouverture du guide à l'enregistrement
+    chipsPick($("#nv-presta"), PRESTA, "presta", () => { majDirePrix(); majVerdict(); }); chipsPick($("#nv-source"), Object.keys(SOURCES), "source", majVerdict);
+    chipsPick($("#nv-occupant"), OCCUPANTS, "occupant", majVerdict); chipsPick($("#nv-delai"), DELAIS, "delai", majVerdict); chipsPick($("#nv-prix"), PRIX_OK, "prix", majVerdict);
+    chipsPick($("#nv-decision"), Object.keys(DECISIONS), "decision");
+    modeDemande("appel"); // le guide d'appel est proposé en premier
+    majDirePrix(); chargerCatalogue().then(majDirePrix);
+    $("#nouveau").showModal(); $("#nouveau").scrollTop = 0;
   }
   $("#b-new").addEventListener("click", () => choisir("Ajouter", "", [
     { t: "Devis sur place", s: "Chez le client : tu fais le devis et il signe sur ton téléphone", fn: () => ouvrirDevis(null, true) },
-    { t: "Nouvelle demande", s: "Un appel ou un contact reçu en direct", fn: nouvelleDemande }
+    { t: "Nouvelle demande", s: "Un appel en cours (avec le guide) ou un contact reçu en direct", fn: nouvelleDemande }
   ]));
   $("#f-new").addEventListener("submit", e => {
     e.preventDefault();
     busy(e.submitter, async () => {
       const src = SOURCES[pick.source] || ["", ""];
-      const res = await api("add", { fields: { nom: $("#nv-nom").value.trim(), tel: $("#nv-tel").value.trim(), commune: $("#nv-commune").value.trim(), prestation: pick.presta, details: $("#nv-details").value.trim(), source: src[0], connu: src[1] } });
+      const fields = { nom: $("#nv-nom").value.trim(), tel: $("#nv-tel").value.trim(), commune: $("#nv-commune").value.trim(), prestation: pick.presta, details: $("#nv-details").value.trim(), source: src[0], connu: src[1] };
+      // Guide d'appel : les réponses partent avec la demande. Le serveur les écrit dans les détails et calcule la note.
+      // Il note aussi l'appel dans l'onglet « Appels » : fourchette annoncée, décision d'Andy, remarque, durée.
+      if (guide.mode === "appel") Object.assign(fields, {
+        occupant: pick.occupant, delai: pick.delai, prix_ok: pick.prix, appel: true,
+        fourchette: pick.prix ? guide.fourchette : "", decision: DECISIONS[pick.decision] || "", remarque: $("#nv-remarque").value.trim(),
+        duree: guide.debut ? Math.round((Date.now() - guide.debut) / 1000) : ""
+      });
+      const res = await api("add", { fields });
       if (!res.ok) return msg("m-new", err(res));
       tracer("Client ajouté", $("#nv-nom").value.trim() + ($("#nv-commune").value.trim() ? " (" + $("#nv-commune").value.trim() + ")" : ""), res.row);
-      $("#nouveau").close(); toast("Demande créée dans le CRM");
+      $("#nouveau").close(); toast("Demande créée dans le CRM" + (noteDe(res) ? " · prospect " + noteDe(res).note : ""));
       await refresh(true);
       const n = state.data.find(x => x.row === res.row); if (n) openFiche(n);
     });
@@ -1179,14 +1459,18 @@
     const jm = n => j(n).slice(0, 5);
     const rows = [
       ["Signé", "Client Démo A", "06 00 00 00 01", "", "Salon-de-Provence", "Entretien", "Nettoyage 1 unité", "", "", "Autre", "Bouche-à-oreille", "", "130", ""],
-      ["Devis envoyé", "Client Démo B", "06 00 00 00 02", "demo.b@exemple.fr", "Istres", "Remplacement", "Tri-split, sinistre", "", "", "Appel Google Ads", "", "Relancer le " + jm(0), "4900", "[" + jm(-5) + " 10:12] Devis envoyé"],
-      ["Devis envoyé", "Client Démo C", "06 00 00 00 03", "demo.c@exemple.fr", "Aix-en-Provence", "Installation", "Bi-split 2 pièces", "", "dès 3 618 €", "Site - Google Ads", "", "Envoyer les autres modèles le " + jm(-1), "3640", ""],
+      ["Devis envoyé", "Client Démo B", "06 00 00 00 02", "demo.b@exemple.fr", "Istres", "Remplacement", "Tri-split, sinistre", "", "", "Appel Google Ads", "", "Relancer le " + jm(0), "4900", "[" + jm(-5) + " 10:12] Devis envoyé", "A : appel téléphonique, remplacement"],
+      ["Devis envoyé", "Client Démo C", "06 00 00 00 03", "demo.c@exemple.fr", "Aix-en-Provence", "Installation", "Bi-split 2 pièces", "", "dès 3 618 €", "Site - Google Ads", "", "Envoyer les autres modèles le " + jm(-1), "3640", "", "B : zone éloignée (27 à 37 km)"],
       ["Rappelé", "Client Démo D", "06 00 00 00 04", "", "Saint-Chamas", "Dépannage", "Clim en panne après la pluie", "", "", "Autre", "", "Diagnostic le " + jm(1) + " à 16h", "", ""],
-      ["", "Client Démo E", "06 00 00 00 05", "demo.e@exemple.fr", "Pélissanne", "Entretien", "2 unités", "Bonjour, je voudrais un entretien", "293 €", "Site - Google Ads", "", "", "", ""],
-      ["Hors cible", "Client Démo F", "", "demo.f@exemple.fr", "Salon-de-Provence", "Installation", "Pièce 38 m²", "", "", "Site - Google Ads", "", "", "", ""]
+      ["", "Client Démo E", "06 00 00 00 05", "demo.e@exemple.fr", "Pélissanne", "Entretien", "2 unités", "Bonjour, je voudrais un entretien", "293 €", "Site - Google Ads", "", "", "", "", "A : entretien"],
+      ["Hors cible", "Client Démo F", "", "demo.f@exemple.fr", "Salon-de-Provence", "Installation", "Pièce 38 m²", "", "", "Site - Google Ads", "", "", "", ""],
+      // Notes de prospect de démonstration (15e valeur) : un C et un B arrivés avant un A, pour voir le tri « A, puis B, puis C ».
+      ["", "Client Démo G", "06 00 00 00 07", "demo.g@exemple.fr", "Avignon", "Installation", "Délai : Plus tard, je compare pour l'instant\nBudget : Moins de 1 500 €", "", "dès 1 305 €", "Site - naturel", "", "Répondre par message, pas de déplacement avant photos", "", "", "C : compare pour l'instant, hors zone"],
+      ["", "Client Démo H", "06 00 00 00 08", "", "Vitrolles", "Installation", "Délai : Dans 1 à 3 mois\nOccupant : Propriétaire", "", "dès 1 361 €", "Site - Google Ads", "", "Rappeler aujourd'hui", "", "", "B : zone sud"],
+      ["", "Client Démo I", "06 00 00 00 09", "demo.i@exemple.fr", "Grans", "Installation", "Délai : Dès que possible, sous 1 mois\nOccupant : Propriétaire\nBudget : 1 500 à 3 000 €", "", "dès 1 361 €", "Site - Google Ads", "", "Rappeler dans l'heure", "", "", "A : propriétaire pressé en zone proche"]
     ];
     return {
-      rows: rows.map((v, i) => ({ row: i + 2, recu: j(-12 + i * 2), statut: v[0], nom: v[1], tel: v[2], email: v[3], commune: v[4], prestation: v[5], details: v[6], message: v[7], estimation: v[8], source: v[9], connu: v[10], action: v[11], montant: v[12], montantNum: Number(v[12]) || 0, notes: v[13] })),
+      rows: rows.map((v, i) => ({ row: i + 2, recu: j(-12 + i * 2), statut: v[0], nom: v[1], tel: v[2], email: v[3], commune: v[4], prestation: v[5], details: v[6], message: v[7], estimation: v[8], source: v[9], connu: v[10], action: v[11], montant: v[12], montantNum: Number(v[12]) || 0, notes: v[13], qualite: v[14] || "" })),
       journal: [{ t: new Date().toISOString(), msg: "Connexion réussie : Windows · Chrome (démo)" }]
     };
   })();
@@ -1205,8 +1489,13 @@
       case "add": {
         const f = data.fields; if (!f.nom) return { ok: false, error: "nom" };
         const row = rows.length + 2;
-        rows.push({ row, recu: new Date().toLocaleDateString("fr-FR"), statut: "Nouveau", nom: f.nom, tel: f.tel, email: "", commune: f.commune, prestation: f.prestation, details: f.details, message: "", estimation: "", source: f.source, connu: f.connu, action: "", montant: "", montantNum: 0, notes: "" });
-        return { ok: true, row };
+        // Comme le serveur : les réponses du guide d'appel en tête des détails, puis la note du prospect.
+        const details = ["occupant", "delai", "prix_ok"].filter(k => f[k]).map(k => NP_LIBELLES[k] + " : " + f[k]).concat(f.details ? [f.details] : []).join("\n");
+        const qualite = npTexteNote(noteProspect({ prestation: f.prestation, commune: f.commune, telephone: f.tel, details, source: f.source, connu: f.connu, occupant: f.occupant, delai: f.delai, prix_ok: f.prix_ok, appel: f.appel === true }));
+        rows.push({ row, recu: new Date().toLocaleDateString("fr-FR"), statut: "Nouveau", nom: f.nom, tel: f.tel, email: "", commune: f.commune, prestation: f.prestation, details, message: "", estimation: "", source: f.source, connu: f.connu, action: "", montant: "", montantNum: 0, notes: "", qualite });
+        // Guide d'appel : en démo, l'appel est gardé en mémoire (le vrai serveur l'écrit dans l'onglet « Appels » du CRM).
+        if (f.appel === true) (D.appels = D.appels || []).push({ ligne: row, client: f.nom, commune: f.commune, besoin: f.prestation, occupant: f.occupant, delai: f.delai, prix_ok: f.prix_ok, fourchette: f.fourchette, note: qualite, decision: f.decision, remarque: f.remarque, duree: f.duree });
+        return { ok: true, row, qualite, appelNote: f.appel === true };
       }
       case "update": {
         const r = rows.find(x => x.row === data.row); if (!r) return { ok: false, error: "ligne" };

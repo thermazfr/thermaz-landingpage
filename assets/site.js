@@ -326,13 +326,16 @@ const THERMAZ = {
     const i = $("#rp-prenom"); if (i) setTimeout(() => i.focus({ preventScroll: true }), 400);
   });
   /* ---- Rappel en 2 cases (prénom + téléphone), haut des pages Ads ---- */
+  // Commune : case facultative ajoutée ici (sans toucher aux pages), sur la ligne du bouton, envoyée avec la demande
+  $$("form[data-callback] .rappel-btn").forEach(b => b.insertAdjacentHTML("beforebegin",
+    '<span aria-hidden="true" style="flex-basis:100%;height:0;margin-top:-8px"></span><label class="rappel-sr" for="rp-commune">Commune (facultatif)</label><input id="rp-commune" name="commune" autocomplete="address-level2" placeholder="Commune (facultatif)" maxlength="60">'));
   $$("form[data-callback]").forEach(f => f.addEventListener("submit", async e => {
     e.preventDefault();
     const st = $(".status", f), d = Object.fromEntries(new FormData(f));
     const prenom = String(d.prenom || "").trim(), tel = String(d.telephone || "").trim();
     if (prenom.length < 2 || tel.replace(/\D/g, "").length < 10) { st.className = "status err"; st.textContent = "Indiquez votre prénom et un numéro de téléphone complet."; return; }
     const btn = $("button", f); if (btn) btn.disabled = true;
-    const ok = await sendLead({ nom: prenom, telephone: tel, prestation: f.dataset.callback, message: "Demande de rappel (formulaire 2 cases, page " + location.pathname + ")" }, st);
+    const ok = await sendLead({ nom: prenom, telephone: tel, commune: String(d.commune || "").trim(), prestation: f.dataset.callback, message: "Demande de rappel (formulaire 2 cases, page " + location.pathname + ")" }, st);
     if (!ok && btn) btn.disabled = false;
   }));
 
@@ -412,7 +415,10 @@ const THERMAZ = {
       if (val("prestation") !== "installation") return null;
       const t = val("type"), rooms = val("pieces"), m2 = +$("#w-m2").value;
       if (t !== "murale" && t !== "multi" && t !== "conseil") return null;
-      if (rooms === "1") { const k = m2 <= 25 ? "2.5" : m2 <= 35 ? "3.5" : m2 <= 50 ? "5" : null; return k ? P.ess[k] : null; }
+      const kw = s => s <= 25 ? "2.5" : s <= 35 ? "3.5" : s <= 50 ? "5" : null;
+      if (rooms === "1") { const k = kw(m2); return k ? P.ess[k] : null; }
+      // Deux muraux = deux monosplits (chacun son groupe dehors), pas un bi-split : deux fois le prix d'un mural
+      if (rooms === "2" && t === "murale") { const k = kw(m2 / 2); return k ? 2 * P.ess[k] : null; }
       if (rooms === "2") return P.ess.bi;
       return null;
     }
@@ -503,14 +509,16 @@ const THERMAZ = {
   /* ---- Devis rapide (accueil, et pages d'arrivée via data/devis-rapide.json) ---- */
   const qwBox = $("[data-qw],[data-qw-src]");
   if (qwBox) {
-    if (qwBox.dataset.qw) devisRapide(qwBox, JSON.parse(qwBox.dataset.qw));
-    else fetch(qwBox.dataset.qwSrc || "data/devis-rapide.json").then(r => r.json()).then(C => devisRapide(qwBox, C)).catch(() => {
-      $(".qw-content", qwBox).innerHTML = '<p>Le formulaire n\'a pas pu se charger. Appelez Andy au <a href="tel:+33651106435">06 51 10 64 35</a>.</p>';
+    // Les parcours se lisent toujours dans data/devis-rapide.json (une seule source, la même sur toutes les pages).
+    // La copie écrite dans la page d'accueil (data-qw) ne sert plus que de secours si le fichier ne répond pas.
+    fetch(qwBox.dataset.qwSrc || "data/devis-rapide.json").then(r => r.json()).catch(() => qwBox.dataset.qw ? JSON.parse(qwBox.dataset.qw) : null).then(C => {
+      if (C) devisRapide(qwBox, C);
+      else $(".qw-content", qwBox).innerHTML = '<p>Le formulaire n\'a pas pu se charger. Appelez Andy au <a href="tel:+33651106435">06 51 10 64 35</a>.</p>';
     });
   }
   function devisRapide(qw, C) {
     const el = s => $(s, qw);
-    let flow = C.flows[qw.dataset.flow] ? qw.dataset.flow : "installation", i = 0, A = {};
+    let flow = C.flows[qw.dataset.flow] ? qw.dataset.flow : "installation", i = 0, A = {}, notice = "";
     $$(".qw-tabs button", qw).forEach(x => x.setAttribute("aria-selected", x.dataset.flow === flow));
     const steps = () => C.flows[flow].steps;
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -524,12 +532,16 @@ const THERMAZ = {
       const ok = CAT.filter(m => m.b === A.marque && m.t === "mural" && m.u === units && (!kw || (m.k >= kw * 0.95 && m.k < kw + 1.2)));
       return ok.length ? Math.min(...ok.map(m => m.p)) : null;
     }
+    const kwOf = m2 => m2 <= 25 ? "2.5" : m2 <= 35 ? "3.5" : m2 <= 50 ? "5" : null;
     function estimate() {
       const P = C.prices;
       if (flow === "installation") {
         const g = /Daikin|Mitsubishi/.test(A.marque || "") ? "pre" : "ess", n = +(A.pieces || 0), m2 = +(A.surface || 25);
-        if (A.type === "murale" && n === 1) { const k = m2 <= 25 ? "2.5" : m2 <= 35 ? "3.5" : m2 <= 50 ? "5" : null; return k ? "dès " + euro(brandMin(1, +k) || P[g][k]) : "Sur devis"; }
-        if ((A.type === "multi" || A.type === "murale") && n === 2) return "dès " + euro(brandMin(2) || P[g].bi);
+        if (A.type === "murale" && n === 1) { const k = kwOf(m2); return k ? "dès " + euro(brandMin(1, +k) || P[g][k]) : "Sur devis"; }
+        // Deux muraux = deux monosplits (chacun son groupe dehors), pas un bi-split : deux fois le prix d'un mural,
+        // chacun pour la moitié de la surface. Le prix du bi-split reste celui du choix « Multisplit ».
+        if (A.type === "murale" && n === 2) { const k = kwOf(m2 / 2); return k ? "dès " + euro(2 * (brandMin(1, +k) || P[g][k])) : "Sur devis"; }
+        if (A.type === "multi" && n === 2) return "dès " + euro(brandMin(2) || P[g].bi);
         return A.type ? "Sur devis" : "";
       }
       if (flow === "entretien") {
@@ -540,12 +552,18 @@ const THERMAZ = {
         const dep = fee === null ? (A.commune ? " + déplacement à confirmer" : "") : fee ? " + " + euro(fee) + " de déplacement" : ", déplacement offert";
         return (A.unites === "4" ? "dès " : "") + (fee ? euro(prix + fee) + unit + " (" + euro(prix) + unit + dep + ")" : euro(prix) + unit + dep);
       }
-      return A.panne ? "Diagnostic sur devis" : "";
+      // Même prix que sur la page dépannage (data/devis-rapide.json, « dep »)
+      return A.panne ? (C.dep ? "Diagnostic sur place " + euro(C.dep.diagnostic) + ", déduit de la réparation" : "Diagnostic sur devis") : "";
     }
     function valid(step) {
+      // Questions en plus dans une étape (« groups ») : toutes obligatoires, sauf celles marquées facultatives
+      if ((step.groups || []).some(g => !g.optional && !A[g.key])) return false;
+      if (step.kind === "groups") return true;
       if (step.kind === "rooms") return !!A.pieces;
       if (step.kind === "place") return !!A.bien && !!(A.commune || "").trim();
-      if (step.kind === "contact") return !!(A.nom || "").trim() && (A.telephone || "").replace(/\D/g, "").length >= 9;
+      if (step.kind === "contact") return !!(A.nom || "").trim() && (A.telephone || "").replace(/\D/g, "").length >= 9 && (!step.accord || !!A[step.accord.key]);
+      // Une réponse « stop » (appareil que je ne dépanne pas) bloque la suite : pas d'envoi
+      if ((step.options || []).some(o => o.stop && o.v === A[step.key])) return false;
       return !!A[step.key];
     }
     function recap() {
@@ -559,14 +577,30 @@ const THERMAZ = {
         else if (s.kind === "place") { if (A.bien || A.commune) rows.push([s.name, [A.bien && A.bien[0].toUpperCase() + A.bien.slice(1), A.commune].filter(Boolean).join(" · ")]); }
         else if (s.kind === "contact") { if (A.nom) rows.push([s.name, A.nom]); }
         else if (A[s.key]) rows.push([s.name, lbl(s, A[s.key])]);
+        (s.groups || []).forEach(g => { if (A[g.key]) rows.push([g.name || g.label, A[g.key]]); });
       });
       el(".qw-list").innerHTML = rows.length ? rows.map(r => "<div><dt>" + esc(r[0]) + "</dt><dd>" + esc(r[1]) + "</dd></div>").join("") : "<div><dd>Répondez aux questions, votre projet se construit ici.</dd></div>";
     }
     function optCards(step) {
       const items = step.options.map(o => '<button type="button" class="qo' + (A[step.key] === o.v ? " on" : "") + (o.art ? " has-art" : "") + '" data-v="' + esc(o.v) + '">' +
-        (o.art ? '<span class="qo-art">' + o.art + "</span>" : '<span class="qo-ic">' + o.icon + "</span>") +
+        (o.art ? '<span class="qo-art">' + o.art + "</span>" : o.icon ? '<span class="qo-ic">' + o.icon + "</span>" : "") +
         "<b>" + esc(o.label) + "</b>" + (o.desc ? "<span>" + esc(o.desc) + "</span>" : "") + "</button>").join("");
-      return '<div class="qo-track' + (step.options.some(o => o.art) ? " art" : "") + '">' + items + "</div>";
+      return '<div class="qo-track' + (step.options.some(o => o.art) ? " art" : "") + '">' + items + "</div>" +
+        (step.options.some(o => o.stop) ? '<p class="qw-note stop" role="status" data-n="' + esc(step.key) + '"></p>' : "");
+    }
+    // Questions en plus dans une étape : un libellé et des réponses à cocher (une seule par question)
+    function groupsHtml(step) {
+      return (step.groups || []).map(g => '<div class="qg" role="group" aria-labelledby="qg-' + esc(g.key) + '"><p class="qg-l" id="qg-' + esc(g.key) + '">' + esc(g.label) + (g.optional ? " <span>(facultatif)</span>" : "") + '</p><div class="qchips">' +
+        g.chips.map(c => '<button type="button" class="qchip' + (A[g.key] === c ? " on" : "") + '" data-g="' + esc(g.key) + '" data-v="' + esc(c) + '" aria-pressed="' + (A[g.key] === c) + '">' + esc(c) + "</button>").join("") + "</div>" +
+        (g.hint ? '<p class="hint">' + esc(g.hint) + "</p>" : "") + (g.notes ? '<p class="qw-note" role="status" data-n="' + esc(g.key) + '"></p>' : "") + "</div>").join("");
+    }
+    // Petit mot sous une réponse : appareil que je ne dépanne pas (bloque l'envoi), rappel pour un locataire
+    function notes() {
+      const s = steps()[i];
+      $$(".qw-note[data-n]", qw).forEach(p => {
+        const g = (s.groups || []).find(x => x.key === p.dataset.n), o = (s.options || []).find(x => x.v === A[s.key]);
+        p.textContent = (g ? (g.notes || {})[A[g.key]] : o && o.stop) || "";
+      });
     }
     function render() {
       const st = steps(), s = st[i];
@@ -579,9 +613,19 @@ const THERMAZ = {
       if (s.options) h = optCards(s);
       else if (s.kind === "chips") h = '<div class="qchips">' + s.chips.map(c => '<button type="button" class="qchip' + (A[s.key] === c ? " on" : "") + '" data-v="' + esc(c) + '">' + esc(c) + "</button>").join("") + "</div>";
       else if (s.kind === "rooms") h = '<div class="qchips big">' + ["1", "2", "3", "4"].map(n => '<button type="button" class="qchip' + (A.pieces === n ? " on" : "") + '" data-room="' + n + '">' + n + (n === "4" ? "+" : "") + " pièce" + (n > 1 ? "s" : "") + "</button>").join("") + '</div><div class="field qw-range"><label for="qw-m2">Surface à climatiser (au total)</label><div class="range"><input type="range" id="qw-m2" min="10" max="150" value="' + (A.surface || 25) + '"><output>' + (A.surface || 25) + " m²</output></div></div>";
-      else if (s.kind === "place") h = '<div class="qo-track">' + [["maison", "Maison"], ["appartement", "Appartement"], ["pro", "Local pro"]].map(([v, l]) => '<button type="button" class="qo' + (A.bien === v ? " on" : "") + '" data-bien="' + v + '"><span class="qo-ic">' + C.place_icons[v] + "</span><b>" + l + "</b></button>").join("") + '</div><div class="f2 qw-fields"><div class="field"><label for="qw-commune">Commune</label><input id="qw-commune" data-k="commune" autocomplete="address-level2" placeholder="Salon-de-Provence" value="' + esc(A.commune || "") + '"></div><div class="field"><label for="qw-delai">Quand ?</label><select id="qw-delai" data-k="delai">' + ["Dès que possible", "Dans le mois", "Dans les 3 mois", "Je me renseigne"].map(d => "<option" + (A.delai === d ? " selected" : "") + ">" + d + "</option>").join("") + "</select></div></div>";
-      else if (s.kind === "contact") h = '<div class="qw-fields"><div class="f2"><div class="field"><label for="qw-nom">Prénom et nom</label><input id="qw-nom" data-k="nom" autocomplete="name" value="' + esc(A.nom || "") + '"></div><div class="field"><label for="qw-tel">Téléphone</label><input id="qw-tel" data-k="telephone" type="tel" autocomplete="tel" value="' + esc(A.telephone || "") + '"></div></div><div class="field"><label for="qw-mail">E-mail (pour recevoir votre estimation)</label><input id="qw-mail" data-k="email" type="email" autocomplete="email" value="' + esc(A.email || "") + '"></div><div class="field"><label for="qw-msg">Précisions (facultatif)</label><textarea id="qw-msg" data-k="message" rows="3" placeholder="Étage, emplacement du groupe extérieur, marque souhaitée…">' + esc(A.message || "") + "</textarea></div></div>";
+      else if (s.kind === "place") h = '<div class="qo-track">' + [["maison", "Maison"], ["appartement", "Appartement"], ["pro", "Local pro"]].map(([v, l]) => '<button type="button" class="qo' + (A.bien === v ? " on" : "") + '" data-bien="' + v + '"><span class="qo-ic">' + C.place_icons[v] + "</span><b>" + l + "</b></button>").join("") + '</div><div class="' + (s.delai === false ? "" : "f2 ") + 'qw-fields"><div class="field"><label for="qw-commune">Commune</label><input id="qw-commune" data-k="commune" autocomplete="address-level2" placeholder="Salon-de-Provence" value="' + esc(A.commune || "") + '"></div>' +
+        // Installation : le délai est une vraie question, sans réponse cochée d'avance (étape « Projet »)
+        (s.delai === false ? "" : '<div class="field"><label for="qw-delai">Quand ?</label><select id="qw-delai" data-k="delai">' + ["Dès que possible", "Dans le mois", "Dans les 3 mois", "Je me renseigne"].map(d => "<option" + (A.delai === d ? " selected" : "") + ">" + d + "</option>").join("") + "</select></div>") + "</div>";
+      else if (s.kind === "contact") h = '<div class="qw-fields"><div class="f2"><div class="field"><label for="qw-nom">Prénom et nom</label><input id="qw-nom" data-k="nom" autocomplete="name" value="' + esc(A.nom || "") + '"></div><div class="field"><label for="qw-tel">Téléphone</label><input id="qw-tel" data-k="telephone" type="tel" autocomplete="tel" value="' + esc(A.telephone || "") + '"></div></div><div class="field"><label for="qw-mail">E-mail (pour recevoir votre estimation)</label><input id="qw-mail" data-k="email" type="email" autocomplete="email" value="' + esc(A.email || "") + '"></div><div class="field"><label for="qw-msg">Précisions (facultatif)</label><textarea id="qw-msg" data-k="message" rows="3" placeholder="Étage, emplacement du groupe extérieur, marque souhaitée…">' + esc(A.message || "") + "</textarea></div>" +
+        // Case obligatoire (dépannage) : le client a vu le prix du diagnostic avant d'envoyer
+        (s.accord ? '<label class="qw-check"><input type="checkbox" data-c="' + esc(s.accord.key) + '"' + (A[s.accord.key] ? " checked" : "") + " required><span>" + esc(s.accord.label) + "</span></label>" : "") + "</div>";
+      h += groupsHtml(s);
+      if (notice && i === 0) h = '<p class="qw-note" role="status">' + esc(notice) + "</p>" + h;
+      // Au clavier : si on était dans les réponses, on arrive sur la première réponse de l'étape suivante
+      const dedans = el(".qw-content").contains(document.activeElement);
       el(".qw-content").innerHTML = h;
+      notes();
+      if (dedans) { const b = el(".qw-content button"); if (b) b.focus({ preventScroll: true }); }
       el(".qw-prev").hidden = i === 0;
       const last = i === st.length - 1;
       el(".qw-next").textContent = last ? "Envoyer ma demande" : "Suivant";
@@ -589,22 +633,38 @@ const THERMAZ = {
       recap();
     }
     function refresh() { el(".qw-next").disabled = !valid(steps()[i]); recap(); }
+    function go(f) {
+      flow = f; i = 0; A = {};
+      $$(".qw-tabs button", qw).forEach(x => x.setAttribute("aria-selected", x.dataset.flow === f));
+      el(".qw-nav").hidden = false; render();
+    }
     el(".qw-content").addEventListener("click", e => {
       const b = e.target.closest("button"); if (!b) return;
       const s = steps()[i];
-      if (b.dataset.room) { A.pieces = b.dataset.room; $$(".qchip", qw).forEach(x => x.classList.toggle("on", x === b)); return refresh(); }
+      if (b.dataset.room) { A.pieces = b.dataset.room; $$("[data-room]", qw).forEach(x => x.classList.toggle("on", x === b)); return refresh(); }
       if (b.dataset.bien) { A.bien = b.dataset.bien; $$(".qo", qw).forEach(x => x.classList.toggle("on", x === b)); return refresh(); }
+      if (b.dataset.g) {
+        // Question en plus : une réponse par question ; une question facultative se décoche en recliquant
+        const g = s.groups.find(x => x.key === b.dataset.g);
+        A[g.key] = g.optional && A[g.key] === b.dataset.v ? "" : b.dataset.v;
+        $$(".qchip", b.parentElement).forEach(x => { const on = x.dataset.v === A[g.key]; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); });
+        notes(); return refresh();
+      }
       if (b.dataset.v !== undefined) {
+        // « Elle est en panne » : on passe sur le parcours Dépannage, avec un mot qui l'explique
+        const o = (s.options || []).find(x => x.v === b.dataset.v);
+        if (o && o.goto && C.flows[o.goto]) { notice = o.note || ""; return go(o.goto); }
         // Le client reste dans le devis : son prix s'affiche une fois ses coordonnées envoyées (page merci)
         A[s.key] = b.dataset.v;
-        $$(".qo,.qchip", qw).forEach(x => x.classList.toggle("on", x === b));
-        refresh();
-        setTimeout(() => { if (i < steps().length - 1 && valid(s)) { i++; render(); } }, 260);
+        $$(".qo,.qchip:not([data-g])", qw).forEach(x => x.classList.toggle("on", x === b));
+        notes(); refresh();
+        setTimeout(() => { if (steps()[i] === s && i < steps().length - 1 && valid(s)) { i++; render(); } }, 260);
       }
     });
     el(".qw-content").addEventListener("input", e => {
       const t = e.target;
       if (t.id === "qw-m2") { A.surface = t.value; t.nextElementSibling.textContent = t.value + " m²"; }
+      else if (t.dataset.c) A[t.dataset.c] = t.checked;
       else if (t.dataset.k) A[t.dataset.k] = t.value;
       refresh();
     });
@@ -614,8 +674,15 @@ const THERMAZ = {
       const st = steps();
       if (!valid(st[i])) return;
       if (i < st.length - 1) { i++; render(); return; }
+      // Rien ne part s'il manque une réponse : on revient sur la question concernée
+      const manque = st.findIndex(s => !valid(s));
+      if (manque >= 0) { i = manque; render(); return; }
       const d = { prestation: C.flows[flow].label };
-      st.forEach(s => { if (s.options) d[s.name.toLowerCase()] = lbl(s, A[s.key]); else if (s.kind === "chips") d.marque = A.marque; });
+      st.forEach(s => {
+        if (s.options) d[s.send || s.name.toLowerCase()] = lbl(s, A[s.key]); else if (s.kind === "chips") d.marque = A.marque;
+        (s.groups || []).forEach(g => { d[g.key] = A[g.key] || ""; });
+        if (s.accord && A[s.accord.key]) d[s.accord.key] = s.accord.value;
+      });
       if (A.pieces) d.pieces = A.pieces + " pièce(s), " + (A.surface || 25) + " m²";
       Object.assign(d, { bien: A.bien, commune: A.commune, delai: A.delai || "Dès que possible", nom: A.nom, telephone: A.telephone, email: A.email || "", message: A.message || "", estimation: estimate() });
       el(".qw-next").disabled = true;
@@ -626,11 +693,7 @@ const THERMAZ = {
       } else el(".qw-next").disabled = false;
     });
     el(".qw-head").addEventListener("click", e => { const open = el(".qw-list").hidden; el(".qw-list").hidden = !open; e.currentTarget.setAttribute("aria-expanded", open); });
-    $$(".qw-tabs button", qw).forEach(b => b.addEventListener("click", () => {
-      flow = b.dataset.flow; i = 0; A = {};
-      $$(".qw-tabs button", qw).forEach(x => x.setAttribute("aria-selected", x === b));
-      el(".qw-nav").hidden = false; render();
-    }));
+    $$(".qw-tabs button", qw).forEach(b => b.addEventListener("click", () => { notice = ""; go(b.dataset.flow); }));
     render();
   }
 
@@ -715,7 +778,9 @@ const THERMAZ = {
         p.className = "lead";
         p.innerHTML = L.prestation === "Entretien"
           ? "Votre prix : <b></b>. Je vous rappelle pour fixer la date de l'entretien."
-          : "Votre estimation : <b></b>, pour une pose standard. Le prix définitif dépend notamment de la distance entre les deux unités (longueur des liaisons) : je vous le confirme après une visite ou quelques photos.";
+          : L.prestation === "Dépannage"
+          ? "Pour votre dépannage : <b></b>. Je vous dis ce qui ne va pas et ce que ça coûte avant de réparer."
+          : "Votre estimation : <b></b>, pour une pose standard. Le prix définitif dépend notamment de la distance entre les deux unités (longueur des liaisons) : je vous le confirme après quelques photos, ou une visite si elle est utile.";
         $("b", p).textContent = L.estimation;
         const lead = $(".lead", thanks);
         lead ? lead.after(p) : thanks.firstElementChild.appendChild(p);

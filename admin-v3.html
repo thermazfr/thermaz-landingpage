@@ -194,11 +194,52 @@
 <dialog class="ad-sheet" id="nouveau" aria-labelledby="nv-titre">
   <form class="ad-sheet-in" id="f-new">
     <header><h2 id="nv-titre">Nouvelle demande</h2><button class="ad-icon" type="button" data-close aria-label="Fermer"><svg width="20" height="20"><use href="#i-close"/></svg></button></header>
-    <p class="ad-muted">Pour noter un appel ou un contact reçu en direct. Ça crée une ligne dans le CRM.</p>
-    <label>Nom<input id="nv-nom" required maxlength="80" autocomplete="off"></label>
-    <label>Téléphone<input id="nv-tel" inputmode="tel" maxlength="30" autocomplete="off"></label>
-    <label>Commune<input id="nv-commune" maxlength="60" autocomplete="off"></label>
-    <div class="ad-block"><h3>Pour quoi ?</h3><div class="ad-chips ad-chips--pick" id="nv-presta"></div></div>
+    <!-- Deux façons de saisir : le guide d'appel (proposé en premier) ou le formulaire simple d'avant.
+         Les éléments marqués data-appel ne servent qu'au guide, ceux marqués data-simple qu'au formulaire simple. -->
+    <div class="ad-seg" id="nv-mode" role="group" aria-label="Façon de saisir">
+      <button type="button" data-mode="appel" aria-pressed="true">Appel en cours</button>
+      <button type="button" data-mode="simple" aria-pressed="false">Saisie simple</button>
+    </div>
+    <p class="ad-muted" data-simple hidden>Pour noter un appel ou un contact reçu en direct. Ça crée une ligne dans le CRM.</p>
+    <!-- Verdict en direct : reste en haut de la fenêtre pendant qu'on fait défiler les questions -->
+    <div class="ad-verdict" id="nv-verdict" data-appel role="status" aria-live="polite"></div>
+    <div class="ad-duo">
+      <label>Nom<input id="nv-nom" required maxlength="80" autocomplete="off"></label>
+      <label>Téléphone<input id="nv-tel" inputmode="tel" maxlength="30" autocomplete="off"></label>
+    </div>
+    <div class="ad-etape" id="nv-besoin">
+      <h3 class="ad-etape-t" data-appel><b>1</b>Le besoin</h3>
+      <p class="ad-dire" data-appel>« C'est pour une pose, un remplacement, une panne ou un entretien ? Et dans quelle commune ? »</p>
+      <label id="nv-commune-l">Commune<input id="nv-commune" maxlength="60" autocomplete="off" list="nv-communes"></label>
+      <datalist id="nv-communes"></datalist>
+      <div class="ad-block" id="nv-presta-b"><h3 data-simple hidden>Pour quoi ?</h3><div class="ad-chips ad-chips--pick" id="nv-presta"></div></div>
+    </div>
+    <div class="ad-etape" data-appel>
+      <h3 class="ad-etape-t"><b>2</b>Le logement</h3>
+      <p class="ad-dire">« Maison ou appartement ? Vous êtes propriétaire ? »</p>
+      <div class="ad-chips ad-chips--pick ad-chips--gros ad-chips--col" id="nv-occupant"></div>
+    </div>
+    <div class="ad-etape" data-appel>
+      <h3 class="ad-etape-t"><b>3</b>Le délai</h3>
+      <p class="ad-dire">« Vous le voudriez pour quand ? »</p>
+      <div class="ad-chips ad-chips--pick ad-chips--gros ad-chips--col" id="nv-delai"></div>
+    </div>
+    <div class="ad-etape" data-appel>
+      <h3 class="ad-etape-t"><b>4</b>Le prix, pour sentir le client</h3>
+      <p class="ad-dire" id="nv-dire-prix"></p>
+      <p class="ad-muted" id="nv-prix-aide" hidden></p>
+      <div class="ad-chips ad-chips--pick ad-chips--gros ad-chips--col" id="nv-prix"></div>
+    </div>
+    <div class="ad-etape" data-appel>
+      <h3 class="ad-etape-t"><b>5</b>La suite</h3>
+      <p class="ad-dire" id="nv-suite"></p>
+    </div>
+    <!-- Ce qu'Andy a vraiment décidé : noté avec l'appel, pour voir plus tard quand il a eu raison contre la note -->
+    <div class="ad-etape" data-appel>
+      <h3 class="ad-etape-t"><b>6</b>Ce que tu as décidé</h3>
+      <div class="ad-chips ad-chips--pick ad-chips--gros ad-chips--col" id="nv-decision"></div>
+      <label>Ce qui a fait la différence dans cet appel<input id="nv-remarque" maxlength="300" autocomplete="off" placeholder="Ex. : il a déjà un devis, sa femme décide, pressé par la chaleur"></label>
+    </div>
     <div class="ad-block"><h3>D'où vient le client ?</h3><div class="ad-chips ad-chips--pick" id="nv-source"></div></div>
     <label>Détails<textarea id="nv-details" rows="2" maxlength="1000" placeholder="Ex. : 2 pièces, maison, veut un devis"></textarea></label>
     <div class="ad-savebar">

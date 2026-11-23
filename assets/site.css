@@ -671,3 +671,18 @@ legend{font-weight:700;font-size:15.5px;margin-bottom:10px;padding:0}
 .callbar{transition:transform .25s ease}
 .callbar.cb-off{transform:translateY(115%)}
 #rappel{scroll-margin-top:90px}
+/* ---------- Simulateur : questions de préqualification (22/11/2026) ---------- */
+.qg{margin-top:18px}
+.qw-content>.qg:first-child{margin-top:0}
+.qg-l{font-weight:700;font-size:15.5px;margin-bottom:8px}
+.qg-l span{font-weight:400;color:var(--muted)}
+.qg .qchip{max-width:100%;text-align:left;border-radius:22px}
+.qw-note{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--cold-soft);font-size:15px;line-height:1.45}
+.qw-note.stop{background:none;border:1.5px solid var(--warm);font-weight:600}
+.qw-note:empty{margin:0;padding:0;border:0}
+.qw-content>.qw-note:first-child{margin:0 0 14px}
+.qw-check{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.45;cursor:pointer}
+.qw-check input{flex:none;width:22px;height:22px;margin:0;accent-color:var(--cold)}
+/* Petit téléphone (360 px) : « Envoyer ma demande » dépassait de la carte, à la dernière étape de tous les parcours */
+.qw-nav{flex-wrap:wrap}
+@media (max-width:400px){.qw-nav .btn{padding-inline:15px}}
