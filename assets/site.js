@@ -446,12 +446,16 @@ const THERMAZ = {
       $("#w-next").hidden = i === steps.length - 1;
       $("#w-send").hidden = i !== steps.length - 1;
       $("#w-err").textContent = "";
+      const q = $("#w-qualif"); if (q) q.hidden = !needsType();
       recap();
     }
     function valid() {
       const s = steps[i], need = s.dataset.require;
       if (need && !val(need)) { $("#w-err").textContent = "Choisissez une réponse pour continuer."; return false; }
       if (i === 3 && !$("#w-commune").value.trim()) { $("#w-err").textContent = "Indiquez votre commune."; return false; }
+      // Préqualification : le délai pour tous ; pour une installation, déjà une clim, propriétaire ou locataire, et le budget.
+      if (i === 3 && !$("#w-delai").value) { $("#w-err").textContent = "Indiquez pour quand vous le souhaitez."; return false; }
+      if (i === 3 && needsType() && !($("#w-deja").value && $("#w-occupant").value && $("#w-budget").value)) { $("#w-err").textContent = "Répondez aux trois questions sur votre projet."; return false; }
       return true;
     }
     $("#w-next").addEventListener("click", () => { if (valid()) show(i + 1); });
@@ -467,6 +471,7 @@ const THERMAZ = {
         prestation: labelOf("prestation"), type: labelOf("type"), pieces: labelOf("pieces"),
         surface: needsType() ? $("#w-m2").value + " m²" : "", bien: labelOf("bien"),
         commune: $("#w-commune").value, delai: $("#w-delai").value,
+        deja_clim: needsType() ? $("#w-deja").value : "", occupant: needsType() ? $("#w-occupant").value : "", budget: needsType() ? $("#w-budget").value : "",
         nom: $("#w-nom").value, telephone: $("#w-tel").value, email: $("#w-mail").value,
         source: $("#w-source").value, message: $("#w-msg").value,
         estimation: estimate() ? "dès " + euro(estimate()) : "Sur devis"

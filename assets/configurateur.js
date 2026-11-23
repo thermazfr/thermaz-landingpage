@@ -72,7 +72,7 @@
 
   /* ---- État ---- */
   const S = { type: "murale", m2: 25, rooms: [25], gamme: "ess", line: "", showAll: false, model: null, manual: false, liaison: 0, contrat: false,
-              nom: "", tel: "", mail: "", commune: "", delai: "Dès que possible", msg: "" };
+              nom: "", tel: "", mail: "", commune: "", delai: "", msg: "" };
   let CAT = [], FICHES = {};
 
   /* ---- Niveau sonore (data/fiches.json, relevé sur les fiches des fabricants) ---- */
@@ -263,7 +263,7 @@
 
   root.addEventListener("submit", async e => {
     e.preventDefault();
-    const err = !S.nom.trim() ? "Indiquez votre nom." : S.tel.replace(/\D/g, "").length < 10 ? "Indiquez un numéro de téléphone valide." : !S.commune.trim() ? "Indiquez votre commune." : !S.model ? "Choisissez un modèle." : "";
+    const err = !S.nom.trim() ? "Indiquez votre nom." : S.tel.replace(/\D/g, "").length < 10 ? "Indiquez un numéro de téléphone valide." : !S.commune.trim() ? "Indiquez votre commune." : !S.delai ? "Indiquez pour quand vous le souhaitez." : !S.model ? "Choisissez un modèle." : "";
     $("#c-err").textContent = err;
     if (err) return;
     const m = S.model, T = TYPES[S.type];
