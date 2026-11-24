@@ -311,3 +311,30 @@ textarea{resize:vertical}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+/* ---------- Demandes reçues (24/11/2026) ---------- */
+@media (max-width:899px){.ad-nav{grid-template-columns:repeat(6,1fr)}}
+@media (max-width:400px){.ad-nav button{font-size:10.5px}}
+.ad-count{position:absolute;top:6px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--warm,#D3381F);color:#fff;font-size:11px;font-style:normal;font-weight:800;line-height:18px;text-align:center}
+.ad-recue-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:4px 0 18px}
+@media (min-width:700px){.ad-recue-stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.ad-recue-stats div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:2px}
+.ad-recue-stats b{font-size:26px;line-height:1.05}
+.ad-recue-stats span{font-size:13px;color:var(--muted)}
+.ad-recue-list{display:grid;gap:12px;margin:10px 0 20px}
+.ad-recue{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:grid;gap:8px}
+.ad-recue.is-new{border-left:4px solid var(--cold)}
+.ad-recue-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ad-recue-top b{font-size:17px}
+.ad-recue-quand{font-size:13px;color:var(--muted);white-space:nowrap}
+.ad-recue-sous{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:14.5px}
+.ad-recue-prix{margin-left:auto}
+.ad-recue-dl{margin:2px 0 0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:5px 14px;font-size:14px}
+.ad-recue-dl dt{color:var(--muted)}
+.ad-recue-dl dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.ad-recue-msg{margin:0;padding:10px 12px;border-radius:10px;background:var(--alt,#F4F6F8);font-size:14px;white-space:pre-line;max-height:9.5em;overflow:auto}
+.ad-recue-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.ad-recue-acts .ad-btn{display:inline-flex;align-items:center;gap:6px;width:auto;flex:1 1 auto;justify-content:center;min-height:42px;padding:8px 14px;font-size:14.5px}
+.ad-btn--ok{color:#1E7A46;border-color:#BFE3CC}
+.ad-btn--lost{color:#B3261E;border-color:#F1C7C3}
+@media (min-width:900px){.ad-count{position:static;margin-left:auto}}

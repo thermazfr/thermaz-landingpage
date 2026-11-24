@@ -183,7 +183,7 @@
   }
   $("#b-refresh").addEventListener("click", () => refresh());
 
-  const TITRES = { today: "Aujourd'hui", demandes: "Demandes", clients: "Clients", argent: "Argent", site: "Visiteurs du site", plus: "Réglages" };
+  const TITRES = { today: "Aujourd'hui", recues: "Demandes reçues", demandes: "Demandes", clients: "Clients", argent: "Argent", site: "Visiteurs du site", plus: "Réglages" };
   $$(".ad-nav button").forEach(b => b.addEventListener("click", () => go(b.dataset.v)));
   $("#b-plus").addEventListener("click", () => go(state.view === "plus" ? "today" : "plus"));
   // Changement de section : fondu court quand le navigateur le permet (jamais si l'utilisateur a réduit les animations).
@@ -203,7 +203,9 @@
   function render() {
     if (!state.data) return;
     $("#dot-today").hidden = !resteAFaire().length;
-    ({ today: renderToday, demandes: renderDemandes, clients: renderClients, argent: renderArgent, site: renderSite, plus: renderPlus })[state.view]();
+    const nb = (state.data || []).filter(r => !r.statut || r.statut === "Nouveau").length, cpt = $("#cnt-recues");
+    if (cpt) { cpt.textContent = nb > 9 ? "9+" : String(nb); cpt.hidden = !nb; }
+    ({ today: renderToday, recues: renderRecues, demandes: renderDemandes, clients: renderClients, argent: renderArgent, site: renderSite, plus: renderPlus })[state.view]();
   }
 
   /* ----- Question ou montant : une feuille de l'appli à la place des fenêtres du navigateur ----- */
@@ -517,6 +519,91 @@
     }).filter(Boolean));
   }
   $("#d-q").addEventListener("input", e => { state.q = e.target.value; renderDemandes(); });
+
+  /* ----- Demandes reçues (24/11/2026, Andy) : chaque nouvelle demande avec toutes ses infos, puis Signé ou Perdu ----- */
+  const recuLe = r => { const m = String(r.recu || "").match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/); return m ? new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0)) : null; };
+  const estNouvelle = r => !r.statut || r.statut === "Nouveau";
+  const viaPub = r => !!r.ads || /ads|annonce|google ads/i.test(String(r.source || ""));
+  function depuis(r) {
+    const d = recuLe(r); if (!d) return r.recu || "";
+    const heure = /\d{1,2}:\d{2}/.test(r.recu || "");
+    const min = Math.round((Date.now() - d) / 60000);
+    if (heure && min < 60) return "il y a " + Math.max(1, min) + " min";
+    if (heure && min < 24 * 60) return "il y a " + Math.round(min / 60) + " h";
+    const j = Math.round((debutJour() - debutJour(d)) / 864e5);
+    return j <= 0 ? "aujourd'hui" : j === 1 ? "hier" : "il y a " + j + " jours";
+  }
+  // Détails envoyés par le site : « type : Murale », « Délai : … » (une ligne par réponse), remis en libellés lisibles
+  const LIB_DETAIL = { type: "Type", marque: "Marque", pieces: "Pièces", surface: "Surface", bien: "Logement", delai: "Délai", deja_clim: "Déjà une clim", occupant: "Occupant", budget: "Budget", panne: "Panne", appareil: "Appareil", poseur: "Posée par", age_clim: "Âge de la clim", unites: "Unités", formule: "Formule", diagnostic_89: "Diagnostic 89 €", commune: "Commune" };
+  function lignesDetails(r) {
+    return String(r.details || "").split(/\n+/).map(s => s.trim()).filter(Boolean).map(s => {
+      const i = s.indexOf(":");
+      if (i <= 0 || i > 30) return ["", s];
+      const k = s.slice(0, i).trim(), v = s.slice(i + 1).trim();
+      return [LIB_DETAIL[k] || k.charAt(0).toUpperCase() + k.slice(1), v];
+    }).filter(([k, v]) => v && k !== "accord_google");
+  }
+  function carteRecue(r) {
+    const t = tel(r.tel), n = noteDe(r);
+    const det = lignesDetails(r);
+    const origine = [r.ads && !/ads/i.test(String(r.source || "")) ? "Annonce Google" : "", r.source, r.connu].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(" · ");
+    const infos = det.concat([
+      ["Origine", origine],
+      ["Page d'arrivée", r.arrivee || ""],
+      ["Mot-clé", r.motcle || ""],
+      ["Campagne", r.campagne || ""],
+      ["Téléphone", r.tel || ""],
+      ["E-mail", r.email || ""]
+    ]).filter(([, v]) => v);
+    const passer = (statut, raison) => {
+      tracer(statut === "Perdu" ? "Demande perdue" : "Demande signée", (r.nom || "?") + (raison ? " · " + raison : ""), r.row);
+      return majFiche(r, raison ? { statut, noteAjout: "Raison de la perte : " + raison } : { statut }, statut === "Perdu" ? "Passée en Perdu" : "Passée en Signé");
+    };
+    return el("article", { class: "ad-recue" + (estNouvelle(r) ? " is-new" : "") },
+      el("div", { class: "ad-recue-top" },
+        el("span", { class: "ad-item-nom" }, n ? pastille(n) : null, el("b", { text: r.nom || "(sans nom)" })),
+        el("span", { class: "ad-recue-quand", text: depuis(r) })),
+      el("p", { class: "ad-recue-sous" },
+        el("span", { class: "ad-badge", "data-s": r.statut || "", text: r.statut || "Nouveau" }),
+        el("span", { text: [r.prestation, r.commune].filter(Boolean).join(" · ") }),
+        r.estimation ? el("b", { class: "ad-recue-prix", text: r.estimation }) : null),
+      n && n.raison ? el("p", { class: "ad-raison", text: "Prospect " + n.note + " : " + n.raison + " (" + NOTE_MOT[n.note] + ")" }) : null,
+      infos.length ? el("dl", { class: "ad-recue-dl" }, infos.flatMap(([k, v]) => [el("dt", { text: k }), el("dd", { text: v })])) : null,
+      r.message ? el("p", { class: "ad-recue-msg", text: r.message }) : null,
+      el("div", { class: "ad-recue-acts" },
+        t ? el("a", { class: "ad-btn ad-btn--main", href: "tel:" + t }, icon("phone", 16), "Appeler") : null,
+        t ? el("a", { class: "ad-btn", href: "https://wa.me/" + t.replace("+", ""), target: "_blank", rel: "noopener noreferrer" }, icon("chat", 16), "WhatsApp") : null,
+        GAGNES.includes(r.statut) ? null : el("button", { class: "ad-btn ad-btn--ok", type: "button", onclick: async () => {
+          const ok = await demander({ titre: "Passer " + (r.nom || "ce client") + " en Signé ?", sous: "La fiche passe dans les chantiers gagnés. Tu pourras mettre le montant dans la fiche.", oui: "Oui, signé" });
+          if (ok) passer("Signé");
+        } }, icon("check", 16), "Signé"),
+        r.statut === "Perdu" ? null : el("button", { class: "ad-btn ad-btn--lost", type: "button", onclick: () =>
+          choisir("Pourquoi c'est perdu ?", r.nom || "", RAISONS_PERTE.map(x => ({ t: x, fn: () => passer("Perdu", x) }))) }, icon("close", 16), "Perdu"),
+        el("button", { class: "ad-btn", type: "button", onclick: () => openFiche(r) }, "Fiche")));
+  }
+  function renderRecues() {
+    const box = $("#s-recues"), all = state.data || [];
+    const il7 = new Date(); il7.setDate(il7.getDate() - 7); il7.setHours(0, 0, 0, 0);
+    const il30 = new Date(); il30.setDate(il30.getDate() - 30); il30.setHours(0, 0, 0, 0);
+    const recentes = all.filter(r => { const d = recuLe(r); return d && d >= il30; });
+    const sem = all.filter(r => { const d = recuLe(r); return d && d >= il7; });
+    const parDate = (a, b) => (recuLe(b) || 0) - (recuLe(a) || 0);
+    const nouv = all.filter(estNouvelle).sort((a, b) => rangNote(a) - rangNote(b) || parDate(a, b));
+    const traitees = recentes.filter(r => !estNouvelle(r)).sort(parDate);
+    const chiffre = (v, l) => el("div", {}, el("b", { text: String(v) }), el("span", { text: l }));
+    box.replaceChildren(
+      el("div", { class: "ad-recue-stats" },
+        chiffre(nouv.length, nouv.length > 1 ? "à traiter" : "à traiter"),
+        chiffre(sem.length, "reçues en 7 jours"),
+        chiffre(sem.filter(viaPub).length, "dont par la pub"),
+        chiffre(sem.filter(r => (noteDe(r) || {}).note === "A").length, "prospects A en 7 jours")),
+      el("h2", { class: "ad-h2" }, "Nouvelles demandes", el("b", { text: nouv.length })),
+      nouv.length ? el("div", { class: "ad-recue-list" }, nouv.map(carteRecue))
+        : el("p", { class: "ad-empty", text: "Aucune nouvelle demande. Les prochaines arriveront ici dès qu'un client envoie le formulaire ou que tu en ajoutes une." }),
+      traitees.length ? el("details", { class: "ad-group" },
+        el("summary", {}, el("span", { class: "ad-h2" }, "Déjà traitées, 30 derniers jours", el("b", { text: traitees.length }))),
+        el("div", { class: "ad-recue-list" }, traitees.map(carteRecue))) : null);
+  }
 
   /* ----- Fiche ----- */
   // Adresse pour Waze : celle notée dans les détails (« Adresse : … ») sinon la commune.
@@ -1470,7 +1557,7 @@ function npTexteNote(n) {
       ["", "Client Démo I", "06 00 00 00 09", "demo.i@exemple.fr", "Grans", "Installation", "Délai : Dès que possible, sous 1 mois\nOccupant : Propriétaire\nBudget : 1 500 à 3 000 €", "", "dès 1 361 €", "Site - Google Ads", "", "Rappeler dans l'heure", "", "", "A : propriétaire pressé en zone proche"]
     ];
     return {
-      rows: rows.map((v, i) => ({ row: i + 2, recu: j(-12 + i * 2), statut: v[0], nom: v[1], tel: v[2], email: v[3], commune: v[4], prestation: v[5], details: v[6], message: v[7], estimation: v[8], source: v[9], connu: v[10], action: v[11], montant: v[12], montantNum: Number(v[12]) || 0, notes: v[13], qualite: v[14] || "" })),
+      rows: rows.map((v, i) => ({ row: i + 2, recu: j(-12 + i * 2), statut: v[0], nom: v[1], tel: v[2], email: v[3], commune: v[4], prestation: v[5], details: v[6], message: v[7], estimation: v[8], source: v[9], connu: v[10], action: v[11], montant: v[12], montantNum: Number(v[12]) || 0, notes: v[13], qualite: v[14] || "", ads: v[9] === "Site - Google Ads", arrivee: v[9] === "Site - Google Ads" ? "/clim-salon.html?ville=grans" : v[9] === "Site - naturel" ? "/climatisation-grans.html" : "" })),
       journal: [{ t: new Date().toISOString(), msg: "Connexion réussie : Windows · Chrome (démo)" }]
     };
   })();
