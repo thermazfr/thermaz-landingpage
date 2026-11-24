@@ -261,7 +261,10 @@ const THERMAZ = {
 
   /* ---- Envoi d'une demande ---- */
   async function sendLead(fields, statusEl) {
-    const data = Object.assign({}, fields, attribution());
+    // Accord facultatif « mesure Google » (case sous le formulaire, non cochée par défaut)
+    const okBox = statusEl && statusEl.parentElement ? statusEl.parentElement.querySelector('input[name="accord_google"]') : null;
+    const accordGoogle = !!(okBox && okBox.checked);
+    const data = Object.assign({}, fields, attribution(), { accord_google: accordGoogle ? "oui" : "non" });
     const subject = "Demande Thermaz : " + (data.prestation || "devis") + " à " + (data.commune || "?");
     const body = Object.entries(data).filter(([, v]) => v).map(([k, v]) => k + " : " + v).join("\n");
     if (!THERMAZ.leadEndpoint) {
@@ -283,7 +286,7 @@ const THERMAZ = {
       track("generate_lead", { prestation: data.prestation || "", commune: data.commune || "", estimation: data.estimation || "" });
       if (window.thermazVisite) window.thermazVisite("en");
       // Page de remerciement : sert aussi de page de conversion pour Google Ads
-      store.set("thz_lead", JSON.stringify({ nom: (data.nom || "").split(" ")[0], telephone: data.telephone || "", prestation: data.prestation || "", estimation: data.estimation || "" }));
+      store.set("thz_lead", JSON.stringify({ nom: (data.nom || "").split(" ")[0], telephone: data.telephone || "", email: data.email || "", ec: accordGoogle, prestation: data.prestation || "", estimation: data.estimation || "" }));
       setTimeout(() => { location.href = "merci.html"; }, 1200);
       return true;
     } catch {
@@ -295,13 +298,24 @@ const THERMAZ = {
   // Utilisé par le configurateur de prix (assets/configurateur.js)
   window.thermazSendLead = sendLead;
 
-  /* ---- RGPD : mention d'information sous chaque formulaire de demande ---- */
-  $$(".qw-status, form[data-lead] .status").forEach(st => {
-    if (st.parentElement.querySelector(".rgpd-note")) return;
-    const p = document.createElement("p");
-    p.className = "hint rgpd-note"; p.style.cssText = "font-size:12.5px;margin-top:8px";
-    p.innerHTML = 'Vos coordonnées servent uniquement à vous rappeler et à faire votre devis. <a href="mentions-legales.html#donnees">Vos données</a>';
-    st.after(p);
+  /* ---- RGPD : mention d'information + accord facultatif « mesure Google » sous chaque formulaire de demande ---- */
+  // 24/11/2026 (Andy) : case NON cochée par défaut. Si la personne la coche, son téléphone et son e-mail
+  // partent chiffrés (SHA-256, calculé dans le navigateur) avec la conversion Google Ads (conversions améliorées).
+  // Sans case cochée : rien n'est envoyé à Google. L'accord est aussi noté dans le CRM (« accord_google »).
+  $$(".qw-status, form[data-lead] .status, form[data-callback] .status, #w-status, #c-status").forEach(st => {
+    const box = st.parentElement;
+    if (st.matches(".qw-status, form[data-lead] .status") && !box.querySelector(".rgpd-note")) {
+      const p = document.createElement("p");
+      p.className = "hint rgpd-note"; p.style.cssText = "font-size:12.5px;margin-top:8px";
+      p.innerHTML = 'Vos coordonnées servent à vous rappeler et à faire votre devis. <a href="mentions-legales.html#donnees">Vos données</a>';
+      st.after(p);
+    }
+    if (box.querySelector(".gads-ok")) return;
+    const l = document.createElement("label");
+    l.className = "hint gads-ok";
+    l.style.cssText = "display:flex;gap:8px;align-items:flex-start;flex-basis:100%;font-size:12.5px;line-height:1.4;margin-top:8px;cursor:pointer";
+    l.innerHTML = '<input type="checkbox" name="accord_google" value="oui" style="flex:none;width:16px;height:16px;margin:1px 0 0"><span>Facultatif : j\'accepte que mon téléphone et mon e-mail soient envoyés chiffrés à Google, seulement pour mesurer l\'efficacité des annonces Thermaz. <a href="mentions-legales.html#cookies">En savoir plus</a></span>';
+    (box.querySelector(".rgpd-note") || st).after(l);
   });
 
   /* ---- Formulaires simples ---- */
@@ -635,6 +649,8 @@ const THERMAZ = {
       const last = i === st.length - 1;
       el(".qw-next").textContent = last ? "Envoyer ma demande" : "Suivant";
       el(".qw-next").disabled = !valid(s);
+      // Case « mesure Google » : seulement à l'étape où l'on donne ses coordonnées
+      const gk = el(".gads-ok"); if (gk) gk.style.display = s.kind === "contact" ? "flex" : "none";
       recap();
     }
     function refresh() { el(".qw-next").disabled = !valid(steps()[i]); recap(); }
@@ -792,9 +808,29 @@ const THERMAZ = {
       }
       // Conversion Google Ads « request_quote » : une seule fois par demande réellement envoyée
       if (L.telephone && typeof window.gtag === "function") {
-        window.gtag("event", "request_quote", { send_to: "AW-18453499766" });
-        track("request_quote_sent");
+        const fire = () => { window.gtag("event", "request_quote", { send_to: "AW-18453499766" }); track("request_quote_sent"); };
         store.set("thz_lead", "{}");
+        if (L.ec && window.crypto && crypto.subtle) {
+          // Conversions améliorées : seulement si la personne a coché la case. Chiffrement SHA-256 ici, dans le navigateur.
+          (async () => {
+            try {
+              const h = async s => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))].map(x => x.toString(16).padStart(2, "0")).join("");
+              const ud = {};
+              const dg = String(L.telephone).replace(/\D/g, "");
+              const tel = /^0\d{9}$/.test(dg) ? "+33" + dg.slice(1) : /^33\d{9}$/.test(dg) ? "+" + dg : String(L.telephone).trim().startsWith("+") ? "+" + dg : "";
+              if (tel) ud.sha256_phone_number = await h(tel);
+              let em = String(L.email || "").trim().toLowerCase();
+              if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) {
+                const [u, dom] = em.split("@");
+                if (dom === "gmail.com" || dom === "googlemail.com") em = u.replace(/\./g, "") + "@" + dom;
+                ud.sha256_email_address = await h(em);
+              }
+              window.gtag("consent", "update", { ad_user_data: "granted" });
+              if (Object.keys(ud).length) window.gtag("set", "user_data", ud);
+            } catch {}
+            fire();
+          })();
+        } else fire();
       }
     } catch {}
   }
