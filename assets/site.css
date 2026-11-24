@@ -628,7 +628,6 @@ legend{font-weight:700;font-size:15.5px;margin-bottom:10px;padding:0}
 .rappel .status.err{color:#FFB4A6}
 .rappel .rgpd-note{color:var(--on-band-muted)}
 .rappel .rgpd-note a{color:inherit}
-.rappel .gads-ok,.band .gads-ok{color:var(--on-band-muted)}.rappel .gads-ok a,.band .gads-ok a{color:inherit}
 .rappel-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 /* Pages Ads : note sous les boutons, barre du bas masquée tant que le haut de page est visible */
 .hero-note{margin:12px 0 0;max-width:560px;font-size:14px;line-height:1.45;color:var(--on-band-muted)}
