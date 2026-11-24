@@ -675,7 +675,10 @@ const THERMAZ = {
         const g = s.groups.find(x => x.key === b.dataset.g);
         A[g.key] = g.optional && A[g.key] === b.dataset.v ? "" : b.dataset.v;
         $$(".qchip", b.parentElement).forEach(x => { const on = x.dataset.v === A[g.key]; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); });
-        notes(); return refresh();
+        notes(); refresh();
+        // Étape à cartes + question en plus (logement + délai) : on avance seul quand les deux sont répondues
+        if (s.options && !g.optional) setTimeout(() => { if (steps()[i] === s && i < steps().length - 1 && valid(s)) { i++; render(); } }, 260);
+        return;
       }
       if (b.dataset.v !== undefined) {
         // « Elle est en panne » : on passe sur le parcours Dépannage, avec un mot qui l'explique
