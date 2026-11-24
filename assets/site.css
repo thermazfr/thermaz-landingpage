@@ -761,3 +761,13 @@ legend{font-weight:700;font-size:15.5px;margin-bottom:10px;padding:0}
   .qw-trust li::before{content:"✓";margin-right:9px;color:#5CC98A;font-weight:800}
   .qw-body{padding:34px 36px 30px;gap:16px}
 }
+/* Simulateur 24/11 : marques en tuiles (étape à part), case RGPD encadrée */
+.qchips.qbrands{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.qbrands .qchip{min-height:64px;font-size:16.5px;font-weight:800;color:var(--qn);text-align:center;justify-content:center;border-radius:14px}
+.qbrands .qchip:last-child{grid-column:1/-1;background:var(--qa-soft);border-color:var(--qa);color:var(--fg);font-weight:700;min-height:54px}
+.qbrands .qchip.on{background:var(--qa-soft);color:var(--fg);box-shadow:0 0 0 1px var(--qa);border-color:var(--qa)}
+.qbrands .qchip:last-child.on{background:var(--qa);color:#fff}
+@media (max-width:520px){.qchips.qbrands{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.qw-rgpd{margin-top:4px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:#FAFBFC;font-size:14px!important;color:var(--muted)}
+.qw-rgpd input{accent-color:var(--qn)}
+.qw-rgpd a{color:var(--fg);font-weight:700}

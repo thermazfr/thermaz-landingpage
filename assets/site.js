@@ -259,6 +259,13 @@ const THERMAZ = {
     return a;
   }
 
+  // Codes postaux de la zone : « 13300 » devient « 13300 Salon-de-Provence » (zone de déplacement, note A/B/C)
+  const CP_COMMUNE = { "13300": "Salon-de-Provence", "13330": "Pélissanne", "13450": "Grans", "13680": "Lançon-Provence", "13140": "Miramas", "13800": "Istres",
+    "13250": "Saint-Chamas", "13430": "Eyguières", "13560": "Sénas", "13113": "Lamanon", "13980": "Alleins", "13370": "Mallemort", "13410": "Lambesc",
+    "13760": "Saint-Cannat", "13350": "Charleval", "13116": "Vernègues", "13121": "Aurons", "13510": "Éguilles", "13122": "Ventabren", "13111": "Coudoux",
+    "13880": "Velaux", "13340": "Rognac", "13130": "Berre-l'Étang", "13580": "La Fare-les-Oliviers", "13127": "Vitrolles", "13700": "Marignane",
+    "13500": "Martigues", "13090": "Aix-en-Provence", "13100": "Aix-en-Provence", "13080": "Aix-en-Provence", "13290": "Aix-en-Provence", "13540": "Aix-en-Provence" };
+
   /* ---- Envoi d'une demande ---- */
   async function sendLead(fields, statusEl) {
     const data = Object.assign({}, fields, attribution());
@@ -568,7 +575,9 @@ const THERMAZ = {
       if (step.kind === "groups") return true;
       if (step.kind === "rooms") return !!A.pieces;
       if (step.kind === "place") return !!A.bien && !!(A.commune || "").trim();
-      if (step.kind === "contact") return !!(A.nom || "").trim() && (A.telephone || "").replace(/\D/g, "").length >= 9 && (!step.accord || !!A[step.accord.key]);
+      if (step.kind === "contact" && step.split) return !!(A.prenom || "").trim() && !!(A.nomf || "").trim() && (A.telephone || "").replace(/\D/g, "").length >= 9
+        && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test((A.email || "").trim()) && (A.commune || "").trim().length >= 2 && (!step.rgpd || !!A.rgpd) && (!step.accord || !!A[step.accord.key]);
+      if (step.kind === "contact") return !!(A.nom || "").trim() && (A.telephone || "").replace(/\D/g, "").length >= 9 && (!step.accord || !!A[step.accord.key]) && (!step.rgpd || !!A.rgpd);
       // Une réponse « stop » (appareil que je ne dépanne pas) bloque la suite : pas d'envoi
       if ((step.options || []).some(o => o.stop && o.v === A[step.key])) return false;
       return !!A[step.key];
@@ -618,14 +627,23 @@ const THERMAZ = {
       el(".qw-status").textContent = ""; el(".qw-status").className = "status qw-status";
       let h = "";
       if (s.options) h = optCards(s);
-      else if (s.kind === "chips") h = '<div class="qchips">' + s.chips.map(c => '<button type="button" class="qchip' + (A[s.key] === c ? " on" : "") + '" data-v="' + esc(c) + '">' + esc(c) + "</button>").join("") + "</div>";
+      else if (s.kind === "chips") h = '<div class="qchips' + (s.key === "marque" ? " qbrands" : "") + '">' + s.chips.map(c => '<button type="button" class="qchip' + (A[s.key] === c ? " on" : "") + '" data-v="' + esc(c) + '">' + esc(c) + "</button>").join("") + "</div>";
       else if (s.kind === "rooms") h = '<div class="qchips big">' + ["1", "2", "3", "4"].map(n => '<button type="button" class="qchip' + (A.pieces === n ? " on" : "") + '" data-room="' + n + '">' + n + (n === "4" ? "+" : "") + " pièce" + (n > 1 ? "s" : "") + "</button>").join("") + '</div><div class="field qw-range"><label for="qw-m2">Surface à climatiser (au total)</label><div class="range"><input type="range" id="qw-m2" min="10" max="150" value="' + (A.surface || 25) + '"><output>' + (A.surface || 25) + " m²</output></div></div>";
       else if (s.kind === "place") h = '<div class="qo-track">' + [["maison", "Maison"], ["appartement", "Appartement"], ["pro", "Local pro"]].map(([v, l]) => '<button type="button" class="qo' + (A.bien === v ? " on" : "") + '" data-bien="' + v + '"><span class="qo-ic">' + C.place_icons[v] + "</span><b>" + l + "</b></button>").join("") + '</div><div class="' + (s.delai === false ? "" : "f2 ") + 'qw-fields"><div class="field"><label for="qw-commune">Commune</label><input id="qw-commune" data-k="commune" autocomplete="address-level2" placeholder="Salon-de-Provence" value="' + esc(A.commune || "") + '"></div>' +
         // Installation : le délai est une vraie question, sans réponse cochée d'avance (étape « Projet »)
         (s.delai === false ? "" : '<div class="field"><label for="qw-delai">Quand ?</label><select id="qw-delai" data-k="delai">' + ["Dès que possible", "Dans le mois", "Dans les 3 mois", "Je me renseigne"].map(d => "<option" + (A.delai === d ? " selected" : "") + ">" + d + "</option>").join("") + "</select></div>") + "</div>";
+      // 24/11 (Andy) : coordonnées comme sur son modèle : prénom, nom, e-mail, téléphone, code postal, projet, case RGPD
+      else if (s.kind === "contact" && s.split) h = '<div class="qw-fields"><div class="f2">' +
+        '<div class="field"><label for="qw-prenom">Prénom *</label><input id="qw-prenom" data-k="prenom" autocomplete="given-name" placeholder="Claire" value="' + esc(A.prenom || "") + '"></div>' +
+        '<div class="field"><label for="qw-nomf">Nom *</label><input id="qw-nomf" data-k="nomf" autocomplete="family-name" placeholder="Dupont" value="' + esc(A.nomf || "") + '"></div></div><div class="f2">' +
+        '<div class="field"><label for="qw-mail">E-mail *</label><input id="qw-mail" data-k="email" type="email" autocomplete="email" placeholder="vous@email.fr" value="' + esc(A.email || "") + '"></div>' +
+        '<div class="field"><label for="qw-tel">Téléphone *</label><input id="qw-tel" data-k="telephone" type="tel" autocomplete="tel" placeholder="06 12 34 56 78" value="' + esc(A.telephone || "") + '"></div></div>' +
+        '<div class="field"><label for="qw-cp">Code postal ou ville *</label><input id="qw-cp" data-k="commune" autocomplete="postal-code" placeholder="Ex : 13300 ou Salon-de-Provence" value="' + esc(A.commune || "") + '"></div>' +
+        '<div class="field"><label for="qw-msg">Votre projet en quelques mots (facultatif)</label><textarea id="qw-msg" data-k="message" rows="3" placeholder="Ex : maison de plain-pied, clim dans le séjour et la chambre…">' + esc(A.message || "") + "</textarea></div>" +
+        (s.rgpd ? '<label class="qw-check qw-rgpd"><input type="checkbox" data-c="rgpd"' + (A.rgpd ? " checked" : "") + ' required><span>Les données transmises sont utilisées uniquement pour répondre à votre demande, conformément au <a href="mentions-legales.html#donnees">RGPD</a>.</span></label>' : "") + "</div>";
       else if (s.kind === "contact") h = '<div class="qw-fields"><div class="f2"><div class="field"><label for="qw-nom">Prénom et nom</label><input id="qw-nom" data-k="nom" autocomplete="name" value="' + esc(A.nom || "") + '"></div><div class="field"><label for="qw-tel">Téléphone</label><input id="qw-tel" data-k="telephone" type="tel" autocomplete="tel" value="' + esc(A.telephone || "") + '"></div></div><div class="field"><label for="qw-mail">E-mail (pour recevoir votre estimation)</label><input id="qw-mail" data-k="email" type="email" autocomplete="email" value="' + esc(A.email || "") + '"></div><div class="field"><label for="qw-msg">Précisions (facultatif)</label><textarea id="qw-msg" data-k="message" rows="3" placeholder="Étage, emplacement du groupe extérieur, marque souhaitée…">' + esc(A.message || "") + "</textarea></div>" +
         // Case obligatoire (dépannage) : le client a vu le prix du diagnostic avant d'envoyer
-        (s.accord ? '<label class="qw-check"><input type="checkbox" data-c="' + esc(s.accord.key) + '"' + (A[s.accord.key] ? " checked" : "") + " required><span>" + esc(s.accord.label) + "</span></label>" : "") + "</div>";
+        (s.accord ? '<label class="qw-check"><input type="checkbox" data-c="' + esc(s.accord.key) + '"' + (A[s.accord.key] ? " checked" : "") + " required><span>" + esc(s.accord.label) + "</span></label>" : "") + (s.rgpd ? '<label class="qw-check qw-rgpd"><input type="checkbox" data-c="rgpd"' + (A.rgpd ? " checked" : "") + ' required><span>Les données transmises sont utilisées uniquement pour répondre à votre demande, conformément au <a href="mentions-legales.html#donnees">RGPD</a>.</span></label>' : "") + "</div>";
       h += groupsHtml(s);
       if (notice && i === 0) h = '<p class="qw-note" role="status">' + esc(notice) + "</p>" + h;
       // Au clavier : si on était dans les réponses, on arrive sur la première réponse de l'étape suivante
@@ -638,7 +656,7 @@ const THERMAZ = {
       el(".qw-next").textContent = last ? "Envoyer ma demande" : "Suivant";
       el(".qw-next").disabled = !valid(s);
       // Phrase RGPD : à l'étape des coordonnées seulement
-      const rn = el(".rgpd-note"); if (rn) rn.style.display = s.kind === "contact" ? "" : "none";
+      const rn = el(".rgpd-note"); if (rn) rn.style.display = s.kind === "contact" && !s.rgpd ? "" : "none";
       recap();
     }
     function refresh() { el(".qw-next").disabled = !valid(steps()[i]); recap(); }
@@ -674,7 +692,7 @@ const THERMAZ = {
       const t = e.target;
       if (t.id === "qw-m2") { A.surface = t.value; t.nextElementSibling.textContent = t.value + " m²"; }
       else if (t.dataset.c) A[t.dataset.c] = t.checked;
-      else if (t.dataset.k) A[t.dataset.k] = t.value;
+      else if (t.dataset.k) { A[t.dataset.k] = t.value; if (t.dataset.k === "prenom" || t.dataset.k === "nomf") A.nom = [A.prenom, A.nomf].map(x => (x || "").trim()).filter(Boolean).join(" "); }
       refresh();
     });
     el(".qw-content").addEventListener("change", e => { if (e.target.dataset.k) { A[e.target.dataset.k] = e.target.value; refresh(); } });
@@ -693,7 +711,12 @@ const THERMAZ = {
         if (s.accord && A[s.accord.key]) d[s.accord.key] = s.accord.value;
       });
       if (A.pieces) d.pieces = A.pieces + " pièce(s), " + (A.surface || 25) + " m²";
-      Object.assign(d, { bien: A.bien, commune: A.commune, delai: A.delai || "Dès que possible", nom: A.nom, telephone: A.telephone, email: A.email || "", message: A.message || "", estimation: estimate() });
+      // Code postal seul (« 13300 ») : on ajoute le nom de la commune, pour la zone et la note A/B/C
+      const cpv = String(A.commune || "").trim(), cpm = cpv.match(/^(\d{5})$/);
+      if (cpm && CP_COMMUNE[cpm[1]]) A.commune = cpm[1] + " " + CP_COMMUNE[cpm[1]];
+      // Pas de délai inventé : seulement s'il a été demandé (24/11 : plus de question « délai » dans l'installation)
+      const menuDelai = st.some(s => s.kind === "place" && s.delai !== false); // menu « Quand ? » affiché sur « Dès que possible »
+      Object.assign(d, { bien: A.bien, commune: A.commune, delai: A.delai || (menuDelai ? "Dès que possible" : ""), nom: A.nom, telephone: A.telephone, email: A.email || "", message: A.message || "", estimation: estimate() });
       el(".qw-next").disabled = true;
       const ok = await sendLead(d, el(".qw-status"));
       if (ok && THERMAZ.leadEndpoint) {
@@ -848,9 +871,22 @@ const THERMAZ = {
     }
     // Étape du simulateur : lue dans le texte « Étape 2 / 5 » déjà affiché, sans toucher au simulateur.
     $$(".qw-step, #w-count").forEach(n => {
-      const lire = () => { const m = n.textContent.match(/(\d+)\s*\/\s*(\d+)/); if (!m) return; S.st = Math.max(S.st, Number(m[1])); S.sn = Number(m[2]); if (Number(m[1]) === Number(m[2])) S.co = 1; };
+      const lire = () => {
+        const m = n.textContent.match(/(\d+)\s*\/\s*(\d+)/); if (!m) return;
+        const avant = S.st;
+        S.st = Math.max(S.st, Number(m[1])); S.sn = Number(m[2]); if (Number(m[1]) === Number(m[2])) S.co = 1;
+        if (S.st > avant && avant >= 1) envoyer(); // une étape de plus : envoyé tout de suite, pas seulement en quittant la page
+      };
       new MutationObserver(lire).observe(n, { childList: true, characterData: true, subtree: true });
     });
+    // 24/11 (Andy) : le 1er clic sur une réponse du simulateur compte tout de suite comme « a commencé le devis »
+    // (= a répondu à la 1re question dans l'écran Visiteurs), même si le simulateur est en bas de page.
+    document.addEventListener("click", e => {
+      const b = e.target.closest && e.target.closest(".qw .qo, .qw .qchip, .qw [data-room], .qw [data-bien]");
+      if (!b) return;
+      S.sv = 1; if (S.st < 2) { S.st = 2; if (!S.sn) S.sn = 5; }
+      envoyer();
+    }, true);
     document.addEventListener("click", e => { if (e.target.closest && e.target.closest('a[href^="tel:"]')) { S.ap = 1; envoyer(); } }, true);
     window.thermazVisite = cle => { if (cle in S) { S[cle] = 1; envoyer(); } };
     setTimeout(envoyer, 2500);
