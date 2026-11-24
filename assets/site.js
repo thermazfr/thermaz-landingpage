@@ -637,6 +637,8 @@ const THERMAZ = {
       const last = i === st.length - 1;
       el(".qw-next").textContent = last ? "Envoyer ma demande" : "Suivant";
       el(".qw-next").disabled = !valid(s);
+      // Phrase RGPD : à l'étape des coordonnées seulement
+      const rn = el(".rgpd-note"); if (rn) rn.style.display = s.kind === "contact" ? "" : "none";
       recap();
     }
     function refresh() { el(".qw-next").disabled = !valid(steps()[i]); recap(); }
@@ -699,6 +701,8 @@ const THERMAZ = {
         el(".qw-nav").hidden = true;
       } else el(".qw-next").disabled = false;
     });
+    // Grand écran : 3 garanties en bas du récapitulatif (affichées seulement quand il est à gauche, voir site.css)
+    if (!el(".qw-trust")) el(".qw-recap").insertAdjacentHTML("beforeend", '<ul class="qw-trust"><li>Devis gratuit</li><li>Sans engagement</li><li>Sans sous-traitance</li></ul>');
     el(".qw-head").addEventListener("click", e => { const open = el(".qw-list").hidden; el(".qw-list").hidden = !open; e.currentTarget.setAttribute("aria-expanded", open); });
     $$(".qw-tabs button", qw).forEach(b => b.addEventListener("click", () => { notice = ""; go(b.dataset.flow); }));
     render();

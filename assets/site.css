@@ -686,3 +686,78 @@ legend{font-weight:700;font-size:15.5px;margin-bottom:10px;padding:0}
 /* Petit téléphone (360 px) : « Envoyer ma demande » dépassait de la carte, à la dernière étape de tous les parcours */
 .qw-nav{flex-wrap:wrap}
 @media (max-width:400px){.qw-nav .btn{padding-inline:15px}}
+
+/* ---------- Simulateur v2 (24/11/2026, modèle demandé par Andy) : récapitulatif à gauche, question à droite ---------- */
+.qw{--qa:var(--warm);--qa-soft:#FDF1EE;--qn:#0F2236;container-type:inline-size}
+.qw-card{background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 18px 50px rgba(11,22,34,.14);overflow:visible}
+.qw-recap{background:var(--qn)}
+.qw-head small{color:#8DBDF3}
+.qw-trust{display:none}
+.qw-bar{height:8px;background:#E7ECF1}
+.qw-bar i{background:linear-gradient(90deg,var(--qn) 0%,#5B3B48 55%,var(--qa) 100%)}
+.qw-step{color:var(--qn);font-weight:800}
+.qw-name{color:var(--muted);font-weight:600;letter-spacing:0;text-transform:none}
+.qw-title{color:var(--fg)}
+/* Cartes de réponse */
+.qo{border:1.5px solid var(--line);border-radius:18px;background:var(--surface);position:relative;transition:border-color .15s,background .15s,box-shadow .15s}
+.qo:hover{border-color:#C9D3DD}
+.qo.on{border-color:var(--qa);background:var(--qa-soft);box-shadow:none}
+.qo.has-art.on::before{content:"✓ Choisi";position:absolute;top:12px;left:12px;z-index:1;background:var(--qa);color:#fff;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:5px 11px;border-radius:999px}
+.qo-track.art{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;overflow:visible;padding:0}
+.qo.has-art{flex:none;padding:18px 18px 16px}
+.qo-track .qo{width:100%;min-width:0;grid-template-columns:minmax(0,1fr);overflow:hidden}
+.qo-art img{height:100%;min-width:0}
+.qo.has-art .qo-art{width:100%;display:flex;align-items:center;justify-content:center}
+.qo-art{background:transparent;aspect-ratio:16/9;padding:6px 0 2px;margin-bottom:10px}
+.qo-art img{max-height:100%;width:auto;max-width:78%;object-fit:contain;mix-blend-mode:multiply}
+.qo b{font-size:18px}
+.qo-ic{background:transparent;color:var(--qa);width:auto;height:auto;margin:0 0 8px}
+.qo-ic svg{width:30px;height:30px}
+/* Logement : cartes avec l'icône au centre */
+.qo-track:not(.art){grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.qo-track:not(.art) .qo:has(.qo-ic){justify-items:center;text-align:center;padding:22px 14px}
+/* Réponses courtes : gros boutons ; sélection pleine couleur */
+.qchip{border-radius:12px;padding:12px 18px;font-weight:600;border:1.5px solid var(--line);background:var(--surface)}
+.qchip:hover{border-color:#C9D3DD}
+.qchip.on,.qw .qchip.on{background:var(--qa);border-color:var(--qa);color:#fff}
+.qg .qchip{border-radius:12px}
+/* Marques : tuiles, « Conseillez-moi » sur toute la largeur */
+.qg[aria-labelledby="qg-marque"] .qchips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.qg[aria-labelledby="qg-marque"] .qchip{min-height:62px;font-size:16.5px;font-weight:800;color:var(--qn);text-align:center;justify-content:center}
+.qg[aria-labelledby="qg-marque"] .qchip:last-child{grid-column:1/-1;background:var(--qa-soft);border-color:var(--qa);color:var(--fg);font-weight:700;min-height:54px}
+.qg[aria-labelledby="qg-marque"] .qchip.on{background:var(--qa-soft);color:var(--fg);box-shadow:0 0 0 1px var(--qa)}
+.qg[aria-labelledby="qg-marque"] .qchip:last-child.on{background:var(--qa);color:#fff}
+/* Coordonnées : grands champs, libellés courts */
+.qw .field label{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.qw .field input,.qw .field select,.qw .field textarea{min-height:52px;border-radius:12px;background:#FAFBFC}
+.qw .field input:focus,.qw .field select:focus,.qw .field textarea:focus{background:var(--surface)}
+.qw .rgpd-note{margin-top:12px!important;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#FAFBFC;font-size:13.5px!important;color:var(--muted);position:relative;padding-left:42px}
+.qw .rgpd-note::before{content:"✓";position:absolute;left:14px;top:13px;width:18px;height:18px;border-radius:5px;background:var(--qn);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center}
+/* Boutons */
+.qw-nav{margin-top:14px}
+.qw-nav .btn{border-radius:999px;min-height:52px;padding-inline:26px;font-weight:750}
+.qw-prev{background:#EEF2F6;border-color:#EEF2F6;color:var(--qn)}
+.qw-prev::before{content:"← "}
+.qw-next{background:var(--qn);border-color:var(--qn);color:#fff}
+.qw-next:hover:not(:disabled){background:#081626}
+.qw-next::after{content:" →"}
+@media (max-width:520px){.qo-track.art{gap:10px}.qo.has-art{padding:14px 12px 12px}.qo b{font-size:16px}.qg[aria-labelledby="qg-marque"] .qchips{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Grand écran : récapitulatif fixe à gauche */
+@container (min-width:760px){
+  .qw-card{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:560px}
+  .qw-recap{border-radius:24px 0 0 24px;padding:34px 22px 26px;display:flex;flex-direction:column;gap:16px}
+  .qw-flag{top:-14px;left:22px}
+  .qw-head{pointer-events:none}
+  .qw-head b{font-size:26px}
+  .qw-count,.qw-chev,.qw-est{display:none!important}
+  .qw-list,.qw-list[hidden]{display:grid!important;gap:10px;margin:4px 0 0}
+  .qw-list div{display:grid;grid-template-columns:28px minmax(0,1fr);grid-template-rows:auto auto;column-gap:12px;row-gap:2px;align-items:center;background:rgba(255,255,255,.07);border-radius:14px;padding:12px 14px;font-size:15px}
+  .qw-list div::before{content:"✓";grid-row:1/3;width:26px;height:26px;border-radius:50%;background:var(--qa);color:#fff;font-size:14px;font-weight:800;display:grid;place-items:center}
+  .qw-list div:not(:has(dt))::before{display:none}
+  .qw-list div:not(:has(dt)){grid-template-columns:1fr}
+  .qw-list dt{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#8DBDF3}
+  .qw-list dd{text-align:left;font-weight:700;font-size:16px;color:#fff}
+  .qw-trust{display:grid;gap:9px;list-style:none;margin:auto 0 0;padding:14px 0 0;font-size:15px;color:#DCE6EF}
+  .qw-trust li::before{content:"✓";margin-right:9px;color:#5CC98A;font-weight:800}
+  .qw-body{padding:34px 36px 30px;gap:16px}
+}
