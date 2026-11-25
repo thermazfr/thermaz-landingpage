@@ -1,6 +1,6 @@
 // Récupère la note et les avis de la fiche Google Thermaz et les écrit dans data/avis-google.json.
 // Lancé chaque nuit par .github/workflows/avis-google.yml. Rien à modifier ici.
-import { writeFile, mkdir } from "node:fs/promises";
+import { writeFile, mkdir, readFile } from "node:fs/promises";
 
 const key = process.env.GOOGLE_PLACES_API_KEY;
 const NAME = "thermaz";
@@ -56,6 +56,20 @@ const res = await fetch(`https://places.googleapis.com/v1/places/${placeId}?lang
 if (!res.ok) { console.error("Erreur Google (avis) :", res.status, await res.text()); process.exit(1); }
 const p = await res.json();
 
+// Google ne renvoie que 5 avis au plus, et parfois aucun : on GARDE les avis déjà reçus et on ajoute les nouveaux
+// (25/11/2026 : une nuit sans avis avait vidé la liste du site). Les nouveaux passent devant ; un ancien avis
+// perd sa date relative (« il y a un mois » ne serait plus vrai). Ordre choisi à la main conservé pour les anciens.
+let avant = [];
+try { avant = JSON.parse(await readFile("data/avis-google.json", "utf8")).reviews || []; } catch {}
+const cle = r => (r.name || "").trim().toLowerCase() + "|" + (r.text || "").replace(/\s+/g, " ").trim().slice(0, 60).toLowerCase();
+const frais = (p.reviews ?? []).filter(r => !EXCLURE.includes((r.authorAttribution?.displayName ?? "").trim().toLowerCase())).map(r => ({
+  name: r.authorAttribution?.displayName ?? "Client Google",
+  stars: r.rating ?? 5,
+  when: r.relativePublishTimeDescription ?? "",
+  text: (r.originalText?.text ?? r.text?.text ?? "").trim()
+})).filter(r => r.text);
+const connus = new Set(avant.map(cle));
+const nouveaux = frais.filter(r => !connus.has(cle(r)));
 const out = {
   placeId: p.id ?? placeId,
   name: p.displayName?.text ?? "Thermaz",
@@ -63,12 +77,8 @@ const out = {
   count: p.userRatingCount ?? 0,
   url: p.googleMapsUri ?? null,
   updated: new Date().toISOString(),
-  reviews: (p.reviews ?? []).filter(r => !EXCLURE.includes((r.authorAttribution?.displayName ?? "").trim().toLowerCase())).map(r => ({
-    name: r.authorAttribution?.displayName ?? "Client Google",
-    stars: r.rating ?? 5,
-    when: r.relativePublishTimeDescription ?? "",
-    text: (r.originalText?.text ?? r.text?.text ?? "").trim()
-  }))
+  reviews: nouveaux.concat(avant.map(r => ({ ...r, when: "" })))
+    .filter(r => !EXCLURE.includes((r.name || "").trim().toLowerCase())).slice(0, 40)
 };
 
 await mkdir("data", { recursive: true });

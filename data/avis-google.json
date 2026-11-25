@@ -1,9 +1,64 @@
 {
-  "placeId": "ChIJl5gVmgLHlYgR0TnkWVA2ox8",
-  "name": "Thermaz climatisation",
-  "rating": 5,
-  "count": 19,
-  "url": "https://maps.google.com/?cid=2279725555113015761&g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAIYBCAA",
-  "updated": "2026-11-25T14:15:58.022Z",
-  "reviews": []
+    "placeId":  "ChIJl5gVmgLHlYgR0TnkWVA2ox8",
+    "name":  "Thermaz climatisation",
+    "rating":  5,
+    "count":  19,
+    "url":  "https://maps.google.com/?cid=2279725555113015761\u0026g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAIYBCAA",
+    "updated":  "2026-11-25T15:05:50.8202978Z",
+    "reviews":  [
+                    {
+                        "name":  "Enola biet",
+                        "stars":  5,
+                        "when":  "",
+                        "text":  "Sollicitée en juillet dernier pour l’entretien de mes quatre climatisations, et malgré le fait que je m’y prenne tard, la société Thermaz a été réactive et malgré un agenda chargé m’a trouvé un créneau afin d’intervenir au plus vite. Outre cette réactivité et agilité, j’ai apprécié la qualité du travail, la propreté du chantier, le respect de la durée d’intervention et la patience apportée par l’entrepreneur à m’expliquer les enjeux de cet entretien. Je recommande."
+                    },
+                    {
+                        "name":  "UgoDako",
+                        "stars":  5,
+                        "when":  "",
+                        "text":  "Installation impeccable.\nBon prix, rien à dire, je recommande !"
+                    },
+                    {
+                        "name":  "Martin Brettnacher",
+                        "stars":  5,
+                        "when":  "",
+                        "text":  "Très satisfait de l’intervention !\nTravail sérieux et soigné, avec de bonnes explications et de précieux conseils.\nProfessionnel, réactif et sympathique, je recommande sans hésiter"
+                    },
+                    {
+                        "name":  "Anais Cava",
+                        "stars":  5,
+                        "when":  "",
+                        "text":  "Très satisfaite de la prestation ! Travail sérieux, soigné et professionnel. Nettoyage de la clim réalisé avec efficacité, personne ponctuelle et agréable. Je recommande sans hésitation !"
+                    },
+                    {
+                        "name":  "matthieu FORGET",
+                        "stars":  5,
+                        "when":  "",
+                        "text":  "Jeune homme dynamique,  consciencieux et professionnel. Qualité de prestation et forte sympathie. Je recommande en tous points. Merci"
+                    },
+                    {
+                        "name":  "Olivier",
+                        "stars":  5,
+                        "when":  "",
+                        "text":  "Parfait, intervention soignée et explications suite à mes multiples questions durant tout le processus de nettoyage de la climatisation, je recommande et reviendrai vers vous . Merci"
+                    },
+                    {
+                        "name":  "Paul Michel",
+                        "stars":  5,
+                        "when":  "",
+                        "text":  "Une prestation professionnelle, ils m’ont conseillé et aidé.\nJe recommande à 1000%"
+                    },
+                    {
+                        "name":  "Arthur Leroyer",
+                        "stars":  5,
+                        "when":  "",
+                        "text":  "Très satisfait du service ! Travail sérieux et soigné. Je recommande."
+                    },
+                    {
+                        "name":  "Xavier MAISSE",
+                        "stars":  5,
+                        "when":  "",
+                        "text":  "Très pro, je recommande"
+                    }
+                ]
 }
